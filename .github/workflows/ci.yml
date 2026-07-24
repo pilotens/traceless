@@ -1,0 +1,207 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.3-alpine
+        env:
+          POSTGRES_DB: traceless
+          POSTGRES_USER: traceless
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U traceless -d traceless"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/uv.lock
+      - name: Install
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --locked --extra dev
+      - name: Lint
+        run: .venv/bin/ruff check .
+      - name: Verify committed OpenAPI contract
+        run: |
+          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
+          git diff --exit-code -- ../web/openapi.json
+      - name: Validate PostgreSQL migrations
+        env: &publisher_migration_env
+          TRACELESS_ENVIRONMENT: production
+          TRACELESS_DATABASE_URL: postgresql+psycopg://traceless@localhost:5432/traceless
+          TRACELESS_AUTO_CREATE_SCHEMA: "false"
+          TRACELESS_PUBLISHER_ENVIRONMENT: production
+          TRACELESS_PUBLISHER_DATABASE_URL: postgresql+psycopg://publisher_migrator@localhost:5432/traceless_publisher
+          TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA: "false"
+          TRACELESS_PUBLISHER_MIGRATION_ROLE: publisher_owner
+          TRACELESS_PUBLISHER_ADMIN_API_KEY: publisher-ci-admin-key-00000000000000000000
+          TRACELESS_PUBLISHER_INGEST_API_KEY: publisher-ci-ingest-key-0000000000000000000
+          TRACELESS_PUBLISHER_REVIEWER_API_KEY: publisher-ci-reviewer-key-0000000000000000
+          TRACELESS_PUBLISHER_CURSOR_SECRET: publisher-ci-cursor-secret-000000000000000000
+          TRACELESS_PUBLISHER_SIGNING_PRIVATE_KEY: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
+        run: |
+          set -o pipefail
+          {
+            export TRACELESS_OPERATIONAL_API_KEY="$(openssl rand -hex 32)"
+            psql --host localhost --username traceless --dbname traceless \
+              --set ON_ERROR_STOP=1 --file ../../ops/postgres/001-runtime-roles.sql
+            .venv/bin/alembic upgrade head
+            .venv/bin/alembic check
+            createdb --host localhost --username traceless traceless_publisher
+            psql --host localhost --username traceless --dbname traceless_publisher \
+              --set ON_ERROR_STOP=1 --file ../../ops/postgres/002-publisher-runtime-roles.sql
+            .venv/bin/alembic -c publisher_alembic.ini upgrade head
+            .venv/bin/alembic -c publisher_alembic.ini check
+            .venv/bin/alembic -c publisher_alembic.ini downgrade base
+            .venv/bin/alembic -c publisher_alembic.ini upgrade head
+            psql --host localhost --username traceless --dbname traceless_publisher \
+              --set ON_ERROR_STOP=1 --file ../../ops/postgres/002-publisher-runtime-roles.sql
+          } 2>&1 | tee /tmp/publisher-migration.log
+      - name: Generate publisher drift diagnostic
+        if: failure()
+        env: *publisher_migration_env
+        run: |
+          .venv/bin/alembic -c publisher_alembic.ini revision --autogenerate -m drift_diagnostic || true
+          find publisher_migrations/versions -maxdepth 1 -type f -name '*drift_diagnostic.py' -print
+      - name: Upload migration diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publisher-migration-diagnostics
+          path: |
+            /tmp/publisher-migration.log
+            publisher_migrations/versions/*drift_diagnostic.py
+          retention-days: 1
+      - name: Test
+        run: .venv/bin/pytest --cov=traceless_api --cov-report=term-missing
+      - name: Attack-chain quality gate
+        run: >-
+          .venv/bin/python scripts/evaluate_attack_chains.py
+          --dataset evaluation/attack_chains.json
+          --min-behavior-f1 0.90
+          --min-language-recall 0.90
+          --min-reachability 0.95
+          --max-brier 0.20
+          --max-ece 0.25
+      - name: PostgreSQL full-stack smoke test
+        env:
+          TRACELESS_TEST_POSTGRES_URL: postgresql+psycopg://traceless@localhost:5432/traceless
+          TRACELESS_TEST_PUBLISHER_POSTGRES_URL: postgresql+psycopg://traceless@localhost:5432/traceless_publisher
+        run: >-
+          .venv/bin/pytest
+          tests/test_postgres_fullstack.py
+          tests/test_attack_chain_postgres.py
+          tests/test_publisher_postgres.py
+          tests/test_publisher_v2_postgres.py
+      - name: Dependency audit
+        run: |
+          uv export --locked --extra dev --no-emit-project --format requirements-txt --output-file /tmp/traceless-audit-requirements.txt
+          .venv/bin/pip-audit --requirement /tmp/traceless-audit-requirements.txt --require-hashes
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Test
+        run: npm run test
+      - name: Verify generated API types
+        run: |
+          npm run generate:api
+          git diff --exit-code -- openapi.json src/generated/traceless-api
+      - name: Build
+        run: npm run build
+      - name: Dependency audit
+        run: npm audit
+
+  publisher-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/publisher-web
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/publisher-web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Test
+        run: npm run test
+      - name: Build
+        run: npm run build
+      - name: Dependency audit
+        run: npm audit
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate Compose
+        run: |
+          docker compose config --quiet
+          docker compose --profile publisher config --quiet
+      - name: Build and smoke-test production-shaped images
+        env:
+          TRACELESS_WEB_OIDC_AUTHORIZATION_URL: https://identity.example/authorize
+          TRACELESS_WEB_OIDC_TOKEN_URL: https://identity.example/token
+          TRACELESS_WEB_OIDC_CLIENT_ID: ci-web-client
+          TRACELESS_WEB_OIDC_REDIRECT_URI: http://localhost:5173/
+          TRACELESS_WEB_OIDC_SCOPES: openid profile api://traceless/access
+          TRACELESS_WEB_OIDC_CONNECT_ORIGIN: https://identity.example
+        run: |
+          set -euo pipefail
+          trap 'docker compose --profile publisher down --volumes --remove-orphans' EXIT
+          docker compose build
+          docker compose up --detach --wait --wait-timeout 180
+          curl --fail --silent --show-error http://127.0.0.1:5173/healthz
+          curl --fail --silent --show-error http://127.0.0.1:5173/health/ready
+          curl --fail --silent --show-error --head http://127.0.0.1:5173/ \
+            | grep --fixed-strings "https://identity.example"
+          docker compose exec -T web \
+            grep -R -q "ci-web-client" /usr/share/nginx/html/assets
+          docker compose --profile publisher up --detach --wait --wait-timeout 180 \
+            publisher-admin publisher-feed publisher-ingest publisher-review publisher-web
+          curl --fail --silent --show-error http://127.0.0.1:8100/health/ready
+          curl --fail --silent --show-error http://127.0.0.1:8101/health/ready
+          curl --fail --silent --show-error http://127.0.0.1:8102/health/ready
+          curl --fail --silent --show-error http://127.0.0.1:8103/health/ready
+          curl --fail --silent --show-error http://127.0.0.1:8200/healthz
+          curl --fail --silent --show-error \
+            http://127.0.0.1:8101/.well-known/traceless-intelligence-signing-keys \
+            | grep --fixed-strings '"algorithm":"Ed25519"'
