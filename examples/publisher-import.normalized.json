@@ -1,0 +1,45 @@
+{
+  "feed_id": "local-scrape-analysis",
+  "feed_version": "2026-07-23T18:00:00Z",
+  "generated_at": "2026-07-23T18:00:00Z",
+  "publish": false,
+  "items": [
+    {
+      "status": "active",
+      "status_changed_at": null,
+      "status_reason": null,
+      "record": {
+        "source_kind": "news",
+        "provider": "central-analysis",
+        "external_id": "article-0042",
+        "record_type": "threat",
+        "title": "Campaign targeting exposed gateways",
+        "summary": "Source-grounded normalized summary.",
+        "source_url": "https://publisher.example/article-0042",
+        "published_at": "2026-07-23T17:40:00Z",
+        "modified_at": "2026-07-23T17:55:00Z",
+        "retrieved_at": "2026-07-23T17:56:00Z",
+        "severity": "high",
+        "confidence": null,
+        "cve_ids": [],
+        "cpes": [],
+        "affected_products": ["Example Gateway"],
+        "mitre_attack_ids": ["T1190"],
+        "indicators": [],
+        "tags": ["initial-access"],
+        "sectors": ["finance"],
+        "regions": ["SE"],
+        "markings": ["TLP:CLEAR"],
+        "valid_from": "2026-07-23T17:40:00Z",
+        "valid_until": null,
+        "revoked": false,
+        "raw_evidence": {
+          "source_id": "article-0042",
+          "source_sha256": "replace-with-producer-owned-source-digest"
+        },
+        "ai_analysis": null,
+        "vulnerability": null
+      }
+    }
+  ]
+}

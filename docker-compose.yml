@@ -1,0 +1,342 @@
+name: traceless
+
+services:
+  database:
+    image: postgres:18.3-alpine
+    environment:
+      POSTGRES_DB: traceless
+      POSTGRES_USER: traceless
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U traceless -d traceless"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./ops/postgres/001-runtime-roles.sql:/docker-entrypoint-initdb.d/001-runtime-roles.sql:ro
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      TRACELESS_ENVIRONMENT: development
+      TRACELESS_DEBUG: "true"
+      TRACELESS_CORS_ORIGINS: '["http://localhost:5173"]'
+      TRACELESS_ALLOWED_HOSTS: '["localhost","127.0.0.1","api"]'
+      TRACELESS_ENABLE_DOCS: "true"
+      TRACELESS_DATABASE_URL: postgresql+psycopg://traceless_api@database:5432/traceless
+      TRACELESS_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_NMAP_ENABLED: "false"
+      TRACELESS_RETAIN_RAW_SCAN_EVIDENCE: "false"
+      # Optional pass-through values. When unset, Settings uses an empty credential
+      # map and its built-in official-host allowlist.
+      TRACELESS_EXTERNAL_INTELLIGENCE_CREDENTIALS:
+      TRACELESS_INTELLIGENCE_ALLOWED_HOSTS:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  migrate:
+    build:
+      context: ./apps/api
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    environment:
+      TRACELESS_ENVIRONMENT: development
+      TRACELESS_DATABASE_URL: postgresql+psycopg://traceless@database:5432/traceless
+      TRACELESS_AUTO_CREATE_SCHEMA: "false"
+    depends_on:
+      role-init:
+        condition: service_completed_successfully
+    restart: "no"
+
+  role-init:
+    image: postgres:18.3-alpine
+    command:
+      - psql
+      - --set=ON_ERROR_STOP=1
+      - --file=/provision/001-runtime-roles.sql
+    environment:
+      PGDATABASE: traceless
+      PGHOST: database
+      PGUSER: traceless
+    volumes:
+      - ./ops/postgres/001-runtime-roles.sql:/provision/001-runtime-roles.sql:ro
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: "no"
+
+  job-worker:
+    build:
+      context: ./apps/api
+    command: ["traceless-job-worker"]
+    environment:
+      TRACELESS_ENVIRONMENT: development
+      TRACELESS_DATABASE_URL: postgresql+psycopg://traceless_worker@database:5432/traceless
+      TRACELESS_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_BACKGROUND_JOB_WORKER_ID: compose-background-worker
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+
+  external-intelligence-worker:
+    build:
+      context: ./apps/api
+    command: ["traceless-external-intelligence-worker", "--poll"]
+    environment:
+      TRACELESS_ENVIRONMENT: development
+      TRACELESS_DATABASE_URL: postgresql+psycopg://traceless_worker@database:5432/traceless
+      TRACELESS_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_EXTERNAL_INTELLIGENCE_WORKER_ID: compose-external-intelligence-worker
+      TRACELESS_EXTERNAL_INTELLIGENCE_CREDENTIALS:
+      TRACELESS_INTELLIGENCE_ALLOWED_HOSTS:
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_OIDC_AUTHORIZATION_URL: ${TRACELESS_WEB_OIDC_AUTHORIZATION_URL:-}
+        VITE_OIDC_TOKEN_URL: ${TRACELESS_WEB_OIDC_TOKEN_URL:-}
+        VITE_OIDC_CLIENT_ID: ${TRACELESS_WEB_OIDC_CLIENT_ID:-}
+        VITE_OIDC_REDIRECT_URI: ${TRACELESS_WEB_OIDC_REDIRECT_URI:-}
+        VITE_OIDC_SCOPES: ${TRACELESS_WEB_OIDC_SCOPES:-}
+    environment:
+      OIDC_CONNECT_SRC: ${TRACELESS_WEB_OIDC_CONNECT_ORIGIN:-}
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "127.0.0.1:5173:8080"
+
+  publisher-database:
+    profiles: ["publisher"]
+    image: postgres:18.3-alpine
+    environment:
+      POSTGRES_DB: traceless_publisher
+      POSTGRES_USER: publisher
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U publisher -d traceless_publisher"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - publisher-postgres-data:/var/lib/postgresql
+
+  publisher-role-init:
+    profiles: ["publisher"]
+    image: postgres:18.3-alpine
+    command:
+      - psql
+      - --set=ON_ERROR_STOP=1
+      - --file=/provision/002-publisher-runtime-roles.sql
+    environment:
+      PGDATABASE: traceless_publisher
+      PGHOST: publisher-database
+      PGUSER: publisher
+    volumes:
+      - ./ops/postgres/002-publisher-runtime-roles.sql:/provision/002-publisher-runtime-roles.sql:ro
+    depends_on:
+      publisher-database:
+        condition: service_healthy
+    restart: "no"
+
+  publisher-migrate:
+    profiles: ["publisher"]
+    build:
+      context: ./apps/api
+    command: ["python", "-m", "alembic", "-c", "publisher_alembic.ini", "upgrade", "head"]
+    environment:
+      TRACELESS_PUBLISHER_ENVIRONMENT: development
+      TRACELESS_PUBLISHER_DATABASE_URL: postgresql+psycopg://publisher_migrator@publisher-database:5432/traceless_publisher
+      TRACELESS_PUBLISHER_MIGRATION_ROLE: publisher_owner
+      TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA: "false"
+    depends_on:
+      publisher-role-init:
+        condition: service_completed_successfully
+    restart: "no"
+
+  publisher-role-grants:
+    profiles: ["publisher"]
+    image: postgres:18.3-alpine
+    command:
+      - psql
+      - --set=ON_ERROR_STOP=1
+      - --file=/provision/002-publisher-runtime-roles.sql
+    environment:
+      PGDATABASE: traceless_publisher
+      PGHOST: publisher-database
+      PGUSER: publisher
+    volumes:
+      - ./ops/postgres/002-publisher-runtime-roles.sql:/provision/002-publisher-runtime-roles.sql:ro
+    depends_on:
+      publisher-migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  publisher-admin:
+    profiles: ["publisher"]
+    build:
+      context: ./apps/api
+    command: ["traceless-intelligence-publisher", "--surface", "admin", "--host", "0.0.0.0", "--port", "8100"]
+    environment:
+      TRACELESS_PUBLISHER_ENVIRONMENT: development
+      TRACELESS_PUBLISHER_SURFACE: admin
+      TRACELESS_PUBLISHER_DATABASE_URL: postgresql+psycopg://publisher_admin_api@publisher-database:5432/traceless_publisher
+      TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_PUBLISHER_EXPECTED_DATABASE_ROLE: publisher_admin_api
+      TRACELESS_PUBLISHER_REQUIRED_SCHEMA_REVISION: p4e1c6a2f540
+      TRACELESS_PUBLISHER_ADMIN_API_KEY: publisher-compose-admin-key-0000000000000000
+      TRACELESS_PUBLISHER_SIGNING_PRIVATE_KEY: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
+      TRACELESS_PUBLISHER_SIGNING_KEY_ID: compose-publisher-key-1
+      TRACELESS_PUBLISHER_ALLOWED_HOSTS: '["localhost","127.0.0.1","publisher-admin"]'
+    depends_on:
+      publisher-role-grants:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8100:8100"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  publisher-feed:
+    profiles: ["publisher"]
+    build:
+      context: ./apps/api
+    command: ["traceless-intelligence-publisher", "--surface", "feed", "--host", "0.0.0.0", "--port", "8101"]
+    environment:
+      TRACELESS_PUBLISHER_ENVIRONMENT: development
+      TRACELESS_PUBLISHER_SURFACE: feed
+      TRACELESS_PUBLISHER_DATABASE_URL: postgresql+psycopg://publisher_feed_api@publisher-database:5432/traceless_publisher
+      TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_PUBLISHER_EXPECTED_DATABASE_ROLE: publisher_feed_api
+      TRACELESS_PUBLISHER_REQUIRED_SCHEMA_REVISION: p4e1c6a2f540
+      TRACELESS_PUBLISHER_CURSOR_SECRET: publisher-compose-cursor-secret-000000000000
+      TRACELESS_PUBLISHER_SIGNING_PRIVATE_KEY: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
+      TRACELESS_PUBLISHER_SIGNING_KEY_ID: compose-publisher-key-1
+      TRACELESS_PUBLISHER_ENABLE_LEGACY_V1_FEED: "false"
+      TRACELESS_PUBLISHER_ALLOWED_HOSTS: '["localhost","127.0.0.1","publisher-feed"]'
+    depends_on:
+      publisher-role-grants:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8101:8101"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8101/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  publisher-ingest:
+    profiles: ["publisher"]
+    build:
+      context: ./apps/api
+    command: ["traceless-intelligence-publisher", "--surface", "ingest", "--host", "0.0.0.0", "--port", "8102"]
+    environment:
+      TRACELESS_PUBLISHER_ENVIRONMENT: development
+      TRACELESS_PUBLISHER_SURFACE: ingest
+      TRACELESS_PUBLISHER_DATABASE_URL: postgresql+psycopg://publisher_ingest_api@publisher-database:5432/traceless_publisher
+      TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_PUBLISHER_EXPECTED_DATABASE_ROLE: publisher_ingest_api
+      TRACELESS_PUBLISHER_REQUIRED_SCHEMA_REVISION: p4e1c6a2f540
+      TRACELESS_PUBLISHER_INGEST_API_KEY: publisher-compose-ingest-key-000000000000000
+      TRACELESS_PUBLISHER_ALLOWED_HOSTS: '["localhost","127.0.0.1","publisher-ingest"]'
+    depends_on:
+      publisher-role-grants:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8102:8102"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8102/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  publisher-review:
+    profiles: ["publisher"]
+    build:
+      context: ./apps/api
+    command: ["traceless-intelligence-publisher", "--surface", "review", "--host", "0.0.0.0", "--port", "8103"]
+    environment:
+      TRACELESS_PUBLISHER_ENVIRONMENT: development
+      TRACELESS_PUBLISHER_SURFACE: review
+      TRACELESS_PUBLISHER_DATABASE_URL: postgresql+psycopg://publisher_review_api@publisher-database:5432/traceless_publisher
+      TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA: "false"
+      TRACELESS_PUBLISHER_EXPECTED_DATABASE_ROLE: publisher_review_api
+      TRACELESS_PUBLISHER_REQUIRED_SCHEMA_REVISION: p4e1c6a2f540
+      TRACELESS_PUBLISHER_REVIEWER_API_KEY: publisher-compose-review-key-000000000000000
+      TRACELESS_PUBLISHER_ALLOWED_HOSTS: '["localhost","127.0.0.1","publisher-review"]'
+    depends_on:
+      publisher-role-grants:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8103:8103"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8103/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  publisher-web:
+    profiles: ["publisher"]
+    build:
+      context: ./apps/publisher-web
+      args:
+        VITE_OIDC_AUTHORIZATION_URL: ${TRACELESS_PUBLISHER_WEB_OIDC_AUTHORIZATION_URL:-}
+        VITE_OIDC_TOKEN_URL: ${TRACELESS_PUBLISHER_WEB_OIDC_TOKEN_URL:-}
+        VITE_OIDC_CLIENT_ID: ${TRACELESS_PUBLISHER_WEB_OIDC_CLIENT_ID:-}
+        VITE_OIDC_REDIRECT_URI: ${TRACELESS_PUBLISHER_WEB_OIDC_REDIRECT_URI:-}
+        VITE_OIDC_SCOPES: ${TRACELESS_PUBLISHER_WEB_OIDC_SCOPES:-}
+    environment:
+      OIDC_CONNECT_SRC: ${TRACELESS_PUBLISHER_WEB_OIDC_CONNECT_ORIGIN:-}
+    depends_on:
+      publisher-admin:
+        condition: service_healthy
+      publisher-feed:
+        condition: service_healthy
+      publisher-ingest:
+        condition: service_healthy
+      publisher-review:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8200:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+
+volumes:
+  postgres-data:
+  publisher-postgres-data:
