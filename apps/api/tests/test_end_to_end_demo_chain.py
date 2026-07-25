@@ -3,7 +3,6 @@ from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
