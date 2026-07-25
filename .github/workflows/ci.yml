@@ -23,7 +23,20 @@ jobs:
         run: |
           sed -n "/^[[:space:]]*python - <<'PY'$/,/^[[:space:]]*PY$/p" .github/workflows/implement-report-builder.yml | sed '1d;$d;s/^          //' > /tmp/implement.py
           python scripts/prepare_report_builder_patch.py
-          python /tmp/implement.py
+          set +e
+          python /tmp/implement.py > /tmp/report-builder-output.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/report-builder-output.log implementation-error.log
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add implementation-error.log
+            git commit -m 'Capture report builder implementation error'
+            git push origin HEAD:agent/initial-platform
+            cat /tmp/report-builder-output.log
+            exit "$status"
+          fi
       - name: Format backend and update OpenAPI
         working-directory: apps/api
         run: |
