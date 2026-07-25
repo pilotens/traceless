@@ -7,6 +7,7 @@ import {
   type OidcAuthDependencies,
   type OidcConfiguration,
 } from './auth';
+import { DemoWorkspace } from './components/DemoWorkspace';
 import { Icon } from './components/Icon';
 import { I18nProvider, useI18n } from './i18n';
 import { OperationalWorkspace } from './components/OperationalWorkspace';
@@ -15,6 +16,8 @@ interface AppProps {
   oidcConfiguration?: OidcConfiguration;
   oidcDependencies?: OidcAuthDependencies;
 }
+
+type ProductView = 'operational' | 'demo';
 
 function AuthenticationGate() {
   const auth = useOidcAuth();
@@ -50,6 +53,7 @@ export function AppShell() {
   const auth = useOidcAuth();
   const { locale, setLocale, t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [view, setView] = useState<ProductView>('operational');
   const api = useMemo(
     () => createOperationalApi({ getAccessToken: () => auth.accessToken }),
     [auth.accessToken],
@@ -84,10 +88,30 @@ export function AppShell() {
 
         <nav className="sidebar-nav" aria-label="Huvudmeny">
           <p className="sidebar-nav__label">{t('product')}</p>
-          <div className="sidebar-nav__item is-active" aria-current="page">
+          <button
+            className={`sidebar-nav__item ${view === 'operational' ? 'is-active' : ''}`}
+            aria-current={view === 'operational' ? 'page' : undefined}
+            onClick={() => {
+              setView('operational');
+              setSidebarOpen(false);
+            }}
+            type="button"
+          >
             <Icon name="scan" />
             <span>{t('operationalAnalysis')}</span>
-          </div>
+          </button>
+          <button
+            className={`sidebar-nav__item ${view === 'demo' ? 'is-active' : ''}`}
+            aria-current={view === 'demo' ? 'page' : undefined}
+            onClick={() => {
+              setView('demo');
+              setSidebarOpen(false);
+            }}
+            type="button"
+          >
+            <Icon name="database" />
+            <span>{locale === 'sv' ? 'Demo' : 'Demo'}</span>
+          </button>
         </nav>
 
         <div className="sidebar__footer">
@@ -121,8 +145,8 @@ export function AppShell() {
             <Icon name="menu" />
           </button>
           <div className="topbar__context">
-            <strong>{t('topTitle')}</strong>
-            <small>{t('topHint')}</small>
+            <strong>{view === 'demo' ? (locale === 'sv' ? 'End-to-end-demo' : 'End-to-end demo') : t('topTitle')}</strong>
+            <small>{view === 'demo' ? (locale === 'sv' ? 'Beständig data genom den riktiga API-kedjan' : 'Persisted data through the real API chain') : t('topHint')}</small>
           </div>
           <div className="topbar__actions">
             <span className="live-badge"><span /> {t('productView')}</span>
@@ -141,7 +165,11 @@ export function AppShell() {
           </div>
         </header>
 
-        <OperationalWorkspace api={api} />
+        {view === 'operational' ? (
+          <OperationalWorkspace api={api} />
+        ) : (
+          <DemoWorkspace api={api} accessToken={auth.accessToken} locale={locale} />
+        )}
       </main>
     </div>
   );
