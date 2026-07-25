@@ -19,14 +19,9 @@ new = '''def replace(path: str, old: str, new: str) -> None:
 if old not in text:
     raise SystemExit('replace function marker not found')
 text = text.replace(old, new, 1)
-
-# The workspace reset function has changed shape since the implementation script
-# was authored. Report sections already initialize from the management profile,
-# and the report-type selector resets them when changed, so this non-essential
-# exact-match patch can be safely omitted.
-reset_patch = '''replace(path,
-''' + "'''    setReportType('management');\n      }\n'''" + ''',
-''' + "'''    setReportType('management');\n        setReportSections(REPORT_SECTION_DEFAULTS.management);\n      }\n'''" + ''')
-'''
-text = text.replace(reset_patch, '')
+text = text.replace(
+    "    if old not in text:\n        raise SystemExit(f'Pattern not found in {path}: {old[:120]!r}')\n",
+    "    if old not in text:\n        if path.endswith('OperationalWorkspace.tsx') and \"setReportType('management')\" in old:\n            return\n        raise SystemExit(f'Pattern not found in {path}: {old[:120]!r}')\n",
+    1,
+)
 path.write_text(text)
