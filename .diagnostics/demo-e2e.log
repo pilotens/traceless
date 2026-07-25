@@ -1,0 +1,111 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0 -- /home/runner/work/traceless/traceless/apps/api/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/traceless/traceless/apps/api
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.14.2
+collecting ... collected 1 item
+
+tests/test_end_to_end_demo_chain.py::test_publisher_to_customer_scan_correlation_risk_and_report FAILED
+
+=================================== FAILURES ===================================
+_________ test_publisher_to_customer_scan_correlation_risk_and_report __________
+
+client = <starlette.testclient.TestClient object at 0x7f88d7ff1220>
+
+    def test_publisher_to_customer_scan_correlation_risk_and_report(client: TestClient) -> None:
+        publisher_app = create_publisher_app(
+            PublisherSettings(
+                environment="test",
+                database_url="sqlite+pysqlite:///:memory:",
+                auto_create_schema=True,
+                admin_api_key=ADMIN_KEY,
+                ingest_api_key=INGEST_KEY,
+                reviewer_api_key=REVIEWER_KEY,
+                cursor_secret=CURSOR_SECRET,
+                signing_private_key=SIGNING_SEED,
+                signing_key_id="demo-e2e-signing-key",
+                allowed_hosts=["testserver"],
+            )
+        )
+    
+        with TestClient(publisher_app) as publisher:
+            account = publisher.post(
+                "/admin/v2/accounts",
+                headers=_headers(ADMIN_KEY),
+                json={"account_key": "demo-customer", "name": "Demo customer", "enabled": True},
+            )
+            assert account.status_code == 201, account.text
+            installation = publisher.post(
+                "/admin/v2/accounts/demo-customer/installations",
+                headers=_headers(ADMIN_KEY),
+                json={
+                    "client_id": "demo-customer-production",
+                    "installation_key": "production",
+                    "environment": "production",
+                    "region": "se-central",
+                    "name": "Demo production",
+                    "enabled": True,
+                    "max_tlp": "TLP:AMBER",
+                    "allowed_providers": ["traceless-demo-publisher"],
+                    "allowed_source_kinds": ["vulnerability", "news"],
+                },
+            )
+            assert installation.status_code == 201, installation.text
+            customer_key = installation.json()["api_key"]
+    
+            observed_at = datetime.now(UTC)
+            imported = publisher.post(
+                "/admin/v1/imports",
+                headers=_headers(INGEST_KEY),
+                json={
+                    "feed_id": "traceless-demo-feed",
+                    "feed_version": "demo-1",
+                    "generated_at": observed_at.isoformat(),
+                    "idempotency_key": "traceless-demo-e2e-1",
+                    "publish": False,
+                    "items": [
+                        _publisher_item(
+                            external_id="traceless-demo-cve-2099-4242",
+                            source_kind="vulnerability",
+                            record_type="vulnerability",
+                            title="Demo gateway remote-code-execution exposure",
+                            observed_at=observed_at,
+                            vulnerability={
+                                "affected_cpes": [
+                                    "cpe:2.3:a:example:gateway:1.0.0:*:*:*:*:*:*:*"
+                                ],
+                                "cvss_score": 9.8,
+                                "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                                "epss_score": 0.91,
+                                "epss_percentile": 0.99,
+                                "exploit_status": "proof_of_concept",
+                            },
+                        ),
+                        _publisher_item(
+                            external_id="traceless-demo-campaign-1",
+                            source_kind="news",
+                            record_type="threat",
+                            title="Demo campaign targeting exposed gateways",
+                            observed_at=observed_at + timedelta(seconds=1),
+                        ),
+                    ],
+                },
+            )
+>           assert imported.status_code == 200, imported.text
+E           AssertionError: {"detail":[{"type":"literal_error","loc":["body","items",0,"record","vulnerability","exploit_status"],"msg":"Input should be 'unknown', 'poc' or 'active'","input":"proof_of_concept","ctx":{"expected":"'unknown', 'poc' or 'active'"}}]}
+E           assert 422 == 200
+E            +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_end_to_end_demo_chain.py:218: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/runner/work/traceless/traceless/apps/api/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_end_to_end_demo_chain.py::test_publisher_to_customer_scan_correlation_risk_and_report - AssertionError: {"detail":[{"type":"literal_error","loc":["body","items",0,"record","vulnerability","exploit_status"],"msg":"Input should be 'unknown', 'poc' or 'active'","input":"proof_of_concept","ctx":{"expected":"'unknown', 'poc' or 'active'"}}]}
+assert 422 == 200
+ +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+========================= 1 failed, 1 warning in 0.46s =========================
