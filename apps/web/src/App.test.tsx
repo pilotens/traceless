@@ -21,17 +21,20 @@ describe('Traceless application shell', () => {
     expect(screen.getByText(/visar endast API-data och importerad evidens/i)).toBeInTheDocument();
   });
 
-  test('does not expose synthetic demo data or non-functional shell controls', async () => {
+  test('exposes an isolated demo tab without preloading synthetic database rows', async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.queryByText('Demo Organisation')).not.toBeInTheDocument();
-    expect(screen.queryByText('Demo Admin')).not.toBeInTheDocument();
-    expect(screen.queryByText('DEMOMILJÖ')).not.toBeInTheDocument();
+    expect(screen.queryByText('[DEMO] Traceless end-to-end')).not.toBeInTheDocument();
+    expect(screen.queryByText('Traceless Demo')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: 'Sök' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Notiser' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Inställningar' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Översikt' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Demo' }));
+    expect(screen.getByRole('heading', { name: /verifiera hela kedjan/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Skapa eller uppdatera demo' })).toBeInTheDocument();
+    expect(screen.queryByText('[DEMO] Traceless end-to-end')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Öppna meny' }));
     expect(document.querySelector('.sidebar')).toHaveClass('sidebar--open');
