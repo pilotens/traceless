@@ -76,7 +76,17 @@ jobs:
           }
       - name: Test report backend
         working-directory: apps/api
-        run: .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q
+        run: |
+          set -o pipefail
+          .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q 2>&1 | tee ../../implementation-error.log || {
+            cd ../..
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add implementation-error.log
+            git commit -m 'Capture report builder backend test error' || true
+            git push origin HEAD:agent/initial-platform
+            exit 1
+          }
       - name: Commit implementation and restore CI
         run: |
           git show 92e20dbb4a3387a3fe8c85bf3ab1634d057303c9:.github/workflows/ci.yml > .github/workflows/ci.yml
