@@ -59,10 +59,21 @@ jobs:
       - name: Test frontend
         working-directory: apps/web
         run: |
-          npm ci
-          npm run generate:api
-          npm run test -- --run
-          npm run build
+          set -o pipefail
+          {
+            npm ci
+            npm run generate:api
+            npm run test -- --run
+            npm run build
+          } 2>&1 | tee ../../implementation-error.log || {
+            cd ../..
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add implementation-error.log
+            git commit -m 'Capture report builder frontend error' || true
+            git push origin HEAD:agent/initial-platform
+            exit 1
+          }
       - name: Test report backend
         working-directory: apps/api
         run: .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q
