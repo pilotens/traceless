@@ -3,19 +3,21 @@ name: Demo E2E diagnostic
 on:
   push:
     branches: [agent/initial-platform]
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diagnostic:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/api
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: agent/initial-platform
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -25,8 +27,13 @@ jobs:
       - name: Run isolated full-chain test
         continue-on-error: true
         run: .venv/bin/pytest -vv -s tests/test_end_to_end_demo_chain.py > /tmp/demo-e2e.log 2>&1
-      - uses: actions/upload-artifact@v4
-        with:
-          name: demo-e2e-diagnostic
-          path: /tmp/demo-e2e.log
-          retention-days: 1
+      - name: Persist diagnostic
+        working-directory: .
+        run: |
+          mkdir -p .diagnostics
+          cp /tmp/demo-e2e.log .diagnostics/demo-e2e.log
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .diagnostics/demo-e2e.log
+          git commit -m 'test: capture demo end-to-end traceback'
+          git push origin HEAD:agent/initial-platform
