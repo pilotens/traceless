@@ -35,7 +35,6 @@ text = text.replace(
 
 text += r"""
 
-# Compatibility and regression-test corrections applied after the generated patch.
 reporting_file = Path('apps/api/src/traceless_api/services/reporting.py')
 reporting_text = reporting_file.read_text()
 reporting_text = reporting_text.replace(
@@ -44,9 +43,13 @@ reporting_text = reporting_text.replace(
     1,
 )
 reporting_text = reporting_text.replace(
-    'Paragraph(escape(item["title"]), styles["TracelessSmall"]),\n                        item["severity"],\n                        ", ".join(item["attack_patterns"]) or "–",',
-    'Paragraph(escape(str(item.get("title") or item.get("name") or item.get("id") or "Okänt hot")), styles["TracelessSmall"]),\n                        item.get("severity", "unknown"),\n                        ", ".join(item.get("attack_patterns", [])) or "–",',
-    1,
+    'escape(item["title"])',
+    'escape(str(item.get("title") or item.get("name") or item.get("id") or "Okänt hot"))',
+)
+reporting_text = reporting_text.replace('item["severity"]', 'item.get("severity", "unknown")')
+reporting_text = reporting_text.replace(
+    '", ".join(item["attack_patterns"]) or "–"',
+    '", ".join(item.get("attack_patterns", [])) or "–"',
 )
 reporting_file.write_text(reporting_text)
 
