@@ -122,7 +122,7 @@ function canonicalDemoFeed() {
           cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
           epss_score: 0.91,
           epss_percentile: 0.99,
-          exploit_status: 'proof_of_concept',
+          exploit_status: 'poc',
         },
       },
       {
