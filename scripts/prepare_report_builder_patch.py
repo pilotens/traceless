@@ -33,7 +33,7 @@ text = text.replace(
     1,
 )
 
-text += r'''
+text += r"""
 
 # Compatibility and regression-test corrections applied after the generated patch.
 reporting_file = Path('apps/api/src/traceless_api/services/reporting.py')
@@ -81,5 +81,5 @@ replacement = '''\ndef test_custom_report_sections_control_payload_and_are_froze
 
 '''
 test_file.write_text(test_text[:start] + replacement + test_text[end:])
-'''
+"""
 path.write_text(text)
