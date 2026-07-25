@@ -3,6 +3,7 @@ name: Demo E2E diagnostic
 on:
   push:
     branches: [agent/initial-platform]
+  workflow_dispatch:
 
 permissions:
   contents: read
