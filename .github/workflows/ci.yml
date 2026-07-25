@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   implement-report-builder:
-    if: github.event_name == 'push' && github.event.head_commit.message == 'Run final report builder implementation'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
