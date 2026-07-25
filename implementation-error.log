@@ -1,2 +1,2 @@
-Pattern not found in apps/web/src/api.ts: '  createReport(systemId: string, format: ReportFormat, reportType: ReportType): Promise<Report>;\n    enqueueReport(\n    '
+Pattern not found in apps/api/src/traceless_api/services/reporting.py: '    "methodology": snapshot["methodology"],\n}\n'
 exit_status=1
