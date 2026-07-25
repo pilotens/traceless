@@ -69,7 +69,6 @@ def _publisher_item(
             "modified_at": observed_at.isoformat(),
             "retrieved_at": observed_at.isoformat(),
             "severity": "critical" if record_type == "vulnerability" else "high",
-            "confidence": 0.96 if record_type == "vulnerability" else 0.90,
             "cve_ids": ["CVE-2099-4242"],
             "cpes": (
                 ["cpe:2.3:a:example:gateway:1.0.0:*:*:*:*:*:*:*"]
