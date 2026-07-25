@@ -1,0 +1,693 @@
+name: Implement report builder
+
+on:
+  push:
+    branches: [agent/initial-platform]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/initial-platform
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Apply report builder changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f'Pattern not found in {path}: {old[:120]!r}')
+              file.write_text(text.replace(old, new, 1))
+
+          # Backend API model
+          path = 'apps/api/src/traceless_api/models/operational.py'
+          replace(path,
+          '''class ReportCreate(StrictModel):
+              format: Literal["pdf", "json", "csv"] = "pdf"
+              report_type: Literal["management", "technical", "risk_register"] = "management"
+          ''',
+          '''ReportSection = Literal[
+              "executive_summary",
+              "scope_methodology",
+              "architecture",
+              "assets_services",
+              "findings",
+              "threats",
+              "risks",
+              "vulnerability_observations",
+              "limitations",
+          ]
+
+
+          class ReportCreate(StrictModel):
+              format: Literal["pdf", "json", "csv"] = "pdf"
+              report_type: Literal["management", "technical", "risk_register"] = "management"
+              sections: list[ReportSection] | None = Field(default=None, min_length=1, max_length=9)
+
+              @field_validator("sections")
+              @classmethod
+              def sections_are_unique(
+                  cls, values: list[ReportSection] | None
+              ) -> list[ReportSection] | None:
+                  if values is not None and len(values) != len(set(values)):
+                      raise ValueError("report sections must be unique")
+                  return values
+          ''')
+
+          # Reporting engine: defaults, selection resolution and frozen config
+          path = 'apps/api/src/traceless_api/services/reporting.py'
+          replace(path,
+          '''REPORT_TYPES = {"management", "technical", "risk_register"}
+          _REPORT_ISOLATION_MARKER = "traceless_report_repeatable_read"
+          ''',
+          '''REPORT_TYPES = {"management", "technical", "risk_register"}
+          REPORT_SECTIONS = {
+              "executive_summary",
+              "scope_methodology",
+              "architecture",
+              "assets_services",
+              "findings",
+              "threats",
+              "risks",
+              "vulnerability_observations",
+              "limitations",
+          }
+          REPORT_SECTION_DEFAULTS = {
+              "management": ["executive_summary", "risks", "limitations"],
+              "technical": [
+                  "scope_methodology",
+                  "architecture",
+                  "assets_services",
+                  "findings",
+                  "threats",
+                  "risks",
+                  "vulnerability_observations",
+                  "limitations",
+              ],
+              "risk_register": ["executive_summary", "scope_methodology", "risks"],
+          }
+          _REPORT_ISOLATION_MARKER = "traceless_report_repeatable_read"
+
+
+          def resolve_report_sections(report_type: str, sections: list[str] | None) -> list[str]:
+              if report_type not in REPORT_TYPES:
+                  raise ValueError(f"Unsupported report type: {report_type}")
+              selected = list(REPORT_SECTION_DEFAULTS[report_type] if sections is None else sections)
+              if not selected:
+                  raise ValueError("At least one report section must be selected")
+              unknown = set(selected) - REPORT_SECTIONS
+              if unknown:
+                  raise ValueError(f"Unsupported report sections: {sorted(unknown)}")
+              if len(selected) != len(set(selected)):
+                  raise ValueError("Report sections must be unique")
+              return selected
+
+
+          def freeze_report_configuration(
+              snapshot: dict[str, Any], *, report_type: str, sections: list[str] | None
+          ) -> list[str]:
+              selected = resolve_report_sections(report_type, sections)
+              snapshot["report_configuration"] = {
+                  "report_type": report_type,
+                  "sections": selected,
+                  "mandatory_content": ["cover", "system_identity", "distribution_tlp", "created_at"],
+              }
+              return selected
+          ''')
+
+          replace(path,
+          '''def render_report(snapshot: dict[str, Any], *, format: str, report_type: str) -> bytes:
+              """Render a report whose content genuinely follows the requested audience."""
+
+              if report_type not in REPORT_TYPES:
+                  raise ValueError(f"Unsupported report type: {report_type}")
+              payload = _report_payload(snapshot, report_type)
+          ''',
+          '''def render_report(
+              snapshot: dict[str, Any],
+              *,
+              format: str,
+              report_type: str,
+              sections: list[str] | None = None,
+          ) -> bytes:
+              """Render a report whose content follows both audience and selected sections."""
+
+              selected_sections = resolve_report_sections(report_type, sections)
+              payload = _report_payload(snapshot, report_type, selected_sections)
+          ''')
+
+          replace(path,
+          '''def _report_payload(snapshot: dict[str, Any], report_type: str) -> dict[str, Any]:
+          ''',
+          '''def _report_payload(
+              snapshot: dict[str, Any], report_type: str, selected_sections: list[str]
+          ) -> dict[str, Any]:
+          ''')
+
+          replace(path,
+          '''        "methodology": snapshot["methodology"],
+              }
+          ''',
+          '''        "methodology": snapshot["methodology"],
+                  "selected_sections": selected_sections,
+              }
+          ''')
+
+          # Replace the purpose-specific payload block with section-aware payloads.
+          start = '''    if report_type == "management":
+                  return {
+          '''
+          end = '''    return {
+                  **common,
+                  "latest_scan": snapshot["latest_scan"],
+                  "latest_architecture": snapshot["latest_architecture"],
+                  "assets": snapshot["assets"],
+                  "services": snapshot["services"],
+                  "findings": snapshot["findings"],
+                  "threats": snapshot["threats"],
+                  "risks": _sort_risks(presented_risks),
+                  "vulnerability_scan_imports": snapshot["vulnerability_scan_imports"],
+                  "vulnerability_observations": snapshot["vulnerability_observations"],
+                  "vulnerability_observations_truncated": snapshot[
+                      "vulnerability_observations_truncated"
+                  ],
+              }
+          '''
+          file = Path(path)
+          text = file.read_text()
+          a = text.index(start)
+          b = text.index(end, a) + len(end)
+          block = '''    selected = set(selected_sections)
+              if report_type == "management":
+                  payload: dict[str, Any] = dict(common)
+                  if "executive_summary" in selected:
+                      payload["summary"] = {
+                          "assets": len(snapshot["assets"]),
+                          "services": len(snapshot["services"]),
+                          "active_findings": len(active_findings),
+                          "active_threats": len(snapshot["threats"]),
+                          "open_risks": len(open_risks),
+                          "closed_risks": len(closed_risks),
+                          "retired_risks": len(retired_open_risks),
+                          "critical_open_risks": sum(
+                              risk["level"] == "critical" for risk in open_risks
+                          ),
+                      }
+                  if "risks" in selected:
+                      payload["prioritized_open_risks"] = _sort_risks(open_risks)[:25]
+                  if "limitations" in selected:
+                      payload["limitations"] = [
+                          "Only current open risks are included in management priorities.",
+                          "Scanner observations and correlation candidates require analyst review.",
+                      ]
+                  if "scope_methodology" in selected:
+                      payload["scope_methodology"] = snapshot["methodology"]
+                  if "architecture" in selected:
+                      payload["latest_architecture"] = snapshot["latest_architecture"]
+                  if "assets_services" in selected:
+                      payload["assets"] = snapshot["assets"]
+                      payload["services"] = snapshot["services"]
+                  if "findings" in selected:
+                      payload["findings"] = snapshot["findings"]
+                  if "threats" in selected:
+                      payload["threats"] = snapshot["threats"]
+                  if "vulnerability_observations" in selected:
+                      payload["vulnerability_observations"] = snapshot["vulnerability_observations"]
+                  return payload
+              if report_type == "risk_register":
+                  payload = dict(common)
+                  if "executive_summary" in selected:
+                      payload["summary"] = {
+                          "open": len(open_risks),
+                          "closed": len(closed_risks),
+                          "retired": len(retired_open_risks),
+                          "total": len(snapshot["risks"]),
+                      }
+                  if "scope_methodology" in selected:
+                      payload["scope_methodology"] = snapshot["methodology"]
+                  if "risks" in selected:
+                      payload["risks"] = _sort_risks(presented_risks)
+                  if "limitations" in selected:
+                      payload["limitations"] = [
+                          "Risk status reflects the frozen report snapshot.",
+                          "Retired risks remain available for audit history.",
+                      ]
+                  return payload
+              payload = dict(common)
+              section_values = {
+                  "scope_methodology": {"scope_methodology": snapshot["methodology"]},
+                  "architecture": {
+                      "latest_scan": snapshot["latest_scan"],
+                      "latest_architecture": snapshot["latest_architecture"],
+                  },
+                  "assets_services": {"assets": snapshot["assets"], "services": snapshot["services"]},
+                  "findings": {"findings": snapshot["findings"]},
+                  "threats": {"threats": snapshot["threats"]},
+                  "risks": {"risks": _sort_risks(presented_risks)},
+                  "vulnerability_observations": {
+                      "vulnerability_scan_imports": snapshot["vulnerability_scan_imports"],
+                      "vulnerability_observations": snapshot["vulnerability_observations"],
+                      "vulnerability_observations_truncated": snapshot[
+                          "vulnerability_observations_truncated"
+                      ],
+                  },
+                  "limitations": {
+                      "limitations": [
+                          "Observed products and correlation candidates require analyst validation.",
+                          "The report reflects a frozen point-in-time snapshot.",
+                      ]
+                  },
+                  "executive_summary": {
+                      "summary": {
+                          "assets": len(snapshot["assets"]),
+                          "services": len(snapshot["services"]),
+                          "findings": len(snapshot["findings"]),
+                          "threats": len(snapshot["threats"]),
+                          "risks": len(snapshot["risks"]),
+                      }
+                  },
+              }
+              for section in selected_sections:
+                  payload.update(section_values.get(section, {}))
+              return payload
+          '''
+          file.write_text(text[:a] + block + text[b:])
+
+          # Replace PDF append functions with section-aware guards.
+          replace(path,
+          '''    if report_type == "management":
+                  _append_management_pdf(story, styles, payload)
+              elif report_type == "technical":
+                  _append_technical_pdf(story, styles, payload)
+              else:
+                  _append_risk_register_pdf(story, styles, payload)
+          ''',
+          '''    story.append(
+                  Paragraph(
+                      escape("Valda delar: " + ", ".join(payload["selected_sections"])),
+                      styles["TracelessSmall"],
+                  )
+              )
+              story.append(Spacer(1, 4 * mm))
+              if report_type == "management":
+                  _append_management_pdf(story, styles, payload)
+              elif report_type == "technical":
+                  _append_technical_pdf(story, styles, payload)
+              else:
+                  _append_risk_register_pdf(story, styles, payload)
+          ''')
+
+          replace(path,
+          '''    summary = [[labels[key], value] for key, value in payload["summary"].items()]
+              story.extend([Paragraph("Sammanfattning", styles["Heading2"]), _styled_table(summary)])
+              story.extend([Spacer(1, 5 * mm), Paragraph("Prioriterade öppna risker", styles["Heading2"])])
+              _append_risk_table(story, styles, payload["prioritized_open_risks"])
+              story.extend(
+                  [
+                      Spacer(1, 5 * mm),
+                      Paragraph("Beslutsunderlagets begränsningar", styles["Heading2"]),
+                      Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"]),
+                  ]
+              )
+          ''',
+          '''    if "summary" in payload:
+                  summary = [[labels[key], value] for key, value in payload["summary"].items()]
+                  story.extend([Paragraph("Sammanfattning", styles["Heading2"]), _styled_table(summary)])
+              if "prioritized_open_risks" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Prioriterade öppna risker", styles["Heading2"])])
+                  _append_risk_table(story, styles, payload["prioritized_open_risks"])
+              if "scope_methodology" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Scope och metod", styles["Heading2"]), Paragraph(escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)), styles["BodyText"])])
+              if "limitations" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Beslutsunderlagets begränsningar", styles["Heading2"]), Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"])])
+          ''')
+
+          # Technical PDF currently assumes all sections; replace entire function body until risk register.
+          file = Path(path); text = file.read_text()
+          a = text.index('def _append_technical_pdf(')
+          b = text.index('\ndef _append_risk_register_pdf(', a)
+          technical = '''def _append_technical_pdf(story: list[Any], styles: Any, payload: dict[str, Any]) -> None:
+              if "summary" in payload:
+                  story.extend([Paragraph("Sammanfattning", styles["Heading2"]), _styled_table([[key, value] for key, value in payload["summary"].items()])])
+              if "scope_methodology" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Scope och metod", styles["Heading2"]), Paragraph(escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)), styles["BodyText"])])
+              if "latest_architecture" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Arkitektur", styles["Heading2"]), Paragraph(escape(json.dumps(payload["latest_architecture"], ensure_ascii=False)), styles["TracelessSmall"])])
+              if "assets" in payload or "services" in payload:
+                  summary = [["Tillgångar", len(payload.get("assets", []))], ["Tjänster", len(payload.get("services", []))]]
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Tillgångar och tjänster", styles["Heading2"]), _styled_table(summary)])
+              if "findings" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Fynd", styles["Heading2"])])
+                  findings = payload["findings"]
+                  if findings:
+                      rows: list[list[Any]] = [["Fynd", "Typ", "CVE", "Status", "CVSS"]]
+                      for finding in findings:
+                          rows.append([Paragraph(escape(finding["title"]), styles["TracelessSmall"]), finding["finding_type"], finding["cve_id"] or "–", finding["lifecycle_status"], finding["cvss_score"] if finding["cvss_score"] is not None else "–"])
+                      story.append(_styled_table(rows, header=True, widths=[75 * mm, 25 * mm, 29 * mm, 24 * mm, 14 * mm]))
+                  else:
+                      story.append(Paragraph("Inga fynd finns i rapportens frysta underlag.", styles["BodyText"]))
+              if "threats" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Hotbild", styles["Heading2"]), _styled_table([["Hot", "Allvar", "ATT&CK"]] + [[Paragraph(escape(item["title"]), styles["TracelessSmall"]), item["severity"], ", ".join(item["attack_patterns"]) or "–"] for item in payload["threats"]], header=True, widths=[95 * mm, 25 * mm, 47 * mm])])
+              if "risks" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Risker", styles["Heading2"])]); _append_risk_table(story, styles, payload["risks"], include_status=True)
+              if "vulnerability_observations" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Scannerobservationer", styles["Heading2"]), Paragraph(escape(f"{len(payload['vulnerability_observations'])} observationer ingår i det frysta underlaget."), styles["BodyText"])])
+                  if payload.get("vulnerability_observations_truncated"):
+                      story.append(Paragraph("Råobservationslistan är avsiktligt begränsad; totalsiffror kommer från importmanifesten.", styles["BodyText"]))
+              if "limitations" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Begränsningar", styles["Heading2"]), Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"])])
+
+          '''
+          file.write_text(text[:a] + technical + text[b+1:])
+
+          replace(path,
+          '''    summary = [
+                  ["Öppna", payload["summary"]["open"]],
+                  ["Stängda", payload["summary"]["closed"]],
+                  ["Totalt", payload["summary"]["total"]],
+              ]
+              story.extend([Paragraph("Status", styles["Heading2"]), _styled_table(summary)])
+              story.extend([Spacer(1, 5 * mm), Paragraph("Risker", styles["Heading2"])])
+              _append_risk_table(story, styles, payload["risks"], include_status=True)
+          ''',
+          '''    if "summary" in payload:
+                  summary = [["Öppna", payload["summary"]["open"]], ["Stängda", payload["summary"]["closed"]], ["Totalt", payload["summary"]["total"]]]
+                  story.extend([Paragraph("Status", styles["Heading2"]), _styled_table(summary)])
+              if "scope_methodology" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Scope och metod", styles["Heading2"]), Paragraph(escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)), styles["BodyText"])])
+              if "risks" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Risker", styles["Heading2"])]); _append_risk_table(story, styles, payload["risks"], include_status=True)
+              if "limitations" in payload:
+                  story.extend([Spacer(1, 5 * mm), Paragraph("Begränsningar", styles["Heading2"]), Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"])])
+          ''')
+
+          # Sync route freezes config and passes sections.
+          path = 'apps/api/src/traceless_api/api/routes/reports.py'
+          replace(path,
+          '''    build_report_snapshot,
+              ensure_report_remains_exportable,
+              prepare_report_transaction,
+              render_report,
+          ''',
+          '''    build_report_snapshot,
+              ensure_report_remains_exportable,
+              freeze_report_configuration,
+              prepare_report_transaction,
+              render_report,
+          ''')
+          replace(path,
+          '''    snapshot = build_report_snapshot(repository, system_id)
+              content = render_report(snapshot, format=payload.format, report_type=payload.report_type)
+          ''',
+          '''    snapshot = build_report_snapshot(repository, system_id)
+              selected_sections = freeze_report_configuration(
+                  snapshot, report_type=payload.report_type, sections=payload.sections
+              )
+              content = render_report(
+                  snapshot,
+                  format=payload.format,
+                  report_type=payload.report_type,
+                  sections=selected_sections,
+              )
+          ''')
+
+          # Worker freezes same config.
+          path = 'apps/api/src/traceless_api/job_worker.py'
+          replace(path,
+          '''from traceless_api.services.reporting import build_report_snapshot, render_report
+          ''',
+          '''from traceless_api.services.reporting import (
+              build_report_snapshot,
+              freeze_report_configuration,
+              render_report,
+          )
+          ''')
+          replace(path,
+          '''    snapshot = build_report_snapshot(repository, job.system_id)
+              content = render_report(
+                  snapshot,
+                  format=request.format,
+                  report_type=request.report_type,
+              )
+          ''',
+          '''    snapshot = build_report_snapshot(repository, job.system_id)
+              selected_sections = freeze_report_configuration(
+                  snapshot, report_type=request.report_type, sections=request.sections
+              )
+              content = render_report(
+                  snapshot,
+                  format=request.format,
+                  report_type=request.report_type,
+                  sections=selected_sections,
+              )
+          ''')
+
+          # Frontend API types and calls.
+          path = 'apps/web/src/api.ts'
+          replace(path,
+          '''export type ReportType = 'management' | 'technical' | 'risk_register';
+          ''',
+          '''export type ReportType = 'management' | 'technical' | 'risk_register';
+          export type ReportSection =
+            | 'executive_summary'
+            | 'scope_methodology'
+            | 'architecture'
+            | 'assets_services'
+            | 'findings'
+            | 'threats'
+            | 'risks'
+            | 'vulnerability_observations'
+            | 'limitations';
+          ''')
+          replace(path,
+          '''  createReport(systemId: string, format: ReportFormat, reportType: ReportType): Promise<Report>;
+              enqueueReport(
+                systemId: string,
+                format: ReportFormat,
+                reportType: ReportType,
+                idempotencyKey: string,
+              ): Promise<BackgroundJobEnqueueResult>;
+          ''',
+          '''  createReport(
+                systemId: string,
+                format: ReportFormat,
+                reportType: ReportType,
+                sections?: ReportSection[],
+              ): Promise<Report>;
+              enqueueReport(
+                systemId: string,
+                format: ReportFormat,
+                reportType: ReportType,
+                idempotencyKey: string,
+                sections?: ReportSection[],
+              ): Promise<BackgroundJobEnqueueResult>;
+          ''')
+          replace(path,
+          '''    createReport: (systemId, format, reportType) =>
+                json<Report>(`${systemPath(systemId)}/reports`, {
+                  method: 'POST',
+                  body: JSON.stringify({ format, report_type: reportType }),
+                }),
+              enqueueReport: (systemId, format, reportType, idempotencyKey) =>
+                json<BackgroundJobEnqueueResult>(`${systemPath(systemId)}/reports/async`, {
+                  method: 'POST',
+                  body: JSON.stringify({ format, report_type: reportType }),
+                  headers: { 'Idempotency-Key': idempotencyKey },
+                }),
+          ''',
+          '''    createReport: (systemId, format, reportType, sections) =>
+                json<Report>(`${systemPath(systemId)}/reports`, {
+                  method: 'POST',
+                  body: JSON.stringify({ format, report_type: reportType, sections }),
+                }),
+              enqueueReport: (systemId, format, reportType, idempotencyKey, sections) =>
+                json<BackgroundJobEnqueueResult>(`${systemPath(systemId)}/reports/async`, {
+                  method: 'POST',
+                  body: JSON.stringify({ format, report_type: reportType, sections }),
+                  headers: { 'Idempotency-Key': idempotencyKey },
+                }),
+          ''')
+
+          # Frontend report builder.
+          path = 'apps/web/src/components/OperationalWorkspace.tsx'
+          replace(path,
+          '''  type ReportFormat,
+              type ReportType,
+          ''',
+          '''  type ReportFormat,
+              type ReportSection,
+              type ReportType,
+          ''')
+          replace(path,
+          '''const BACKGROUND_JOB_POLL_MS = 2_000;
+          ''',
+          '''const BACKGROUND_JOB_POLL_MS = 2_000;
+          const REPORT_SECTION_OPTIONS: Array<{ id: ReportSection; label: string; description: string }> = [
+            { id: 'executive_summary', label: 'Sammanfattning', description: 'Nyckeltal och övergripande slutsats.' },
+            { id: 'scope_methodology', label: 'Scope och metod', description: 'Omfattning, datakällor och bedömningsmetod.' },
+            { id: 'architecture', label: 'Arkitektur', description: 'Senaste frysta arkitektur- och skanningskontext.' },
+            { id: 'assets_services', label: 'Tillgångar och tjänster', description: 'Observerade systemkomponenter och exponerade tjänster.' },
+            { id: 'findings', label: 'Fynd', description: 'Tekniska fynd med status, CVE, CVSS och evidens.' },
+            { id: 'threats', label: 'Hotbild och ATT&CK', description: 'Matchad hotinformation och MITRE ATT&CK.' },
+            { id: 'risks', label: 'Risker', description: 'Prioriterade och historiska riskbedömningar.' },
+            { id: 'vulnerability_observations', label: 'Scannerobservationer', description: 'Importerade leverantörsobservationer och rådata.' },
+            { id: 'limitations', label: 'Begränsningar', description: 'Osäkerheter, antaganden och valideringsbehov.' },
+          ];
+          const REPORT_SECTION_DEFAULTS: Record<ReportType, ReportSection[]> = {
+            management: ['executive_summary', 'risks', 'limitations'],
+            technical: REPORT_SECTION_OPTIONS.map((section) => section.id).filter((id) => id !== 'executive_summary'),
+            risk_register: ['executive_summary', 'scope_methodology', 'risks'],
+          };
+          ''')
+          replace(path,
+          '''  const [reportType, setReportType] = useState<ReportType>('management');
+          ''',
+          '''  const [reportType, setReportType] = useState<ReportType>('management');
+            const [reportSections, setReportSections] = useState<ReportSection[]>(
+              REPORT_SECTION_DEFAULTS.management,
+            );
+          ''')
+          replace(path,
+          '''    setReportType('management');
+            }
+          ''',
+          '''    setReportType('management');
+              setReportSections(REPORT_SECTION_DEFAULTS.management);
+            }
+          ''')
+          replace(path,
+          '''        reportType,
+                  `report-${crypto.randomUUID()}`,
+                );
+          ''',
+          '''        reportType,
+                  `report-${crypto.randomUUID()}`,
+                  reportSections,
+                );
+          ''')
+          old = '''              <form className="op-report-form" onSubmit={handleCreateReport}>
+                                <label><span>Rapporttyp</span><select value={reportType} onChange={(event) => setReportType(event.target.value as ReportType)}><option value="management">Ledning</option><option value="technical">Teknisk</option><option value="risk_register">Riskregister</option></select></label>
+                                <label><span>Format</span><select value={reportFormat} onChange={(event) => setReportFormat(event.target.value as ReportFormat)}><option value="pdf">PDF</option><option value="json">JSON</option><option value="csv">CSV</option></select></label>
+                                <button className="primary-button" disabled={busyAction !== null}><Icon name="report" size={16} /> Köa rapport</button>
+                              </form>
+          '''
+          new = '''              <form className="op-report-form" onSubmit={handleCreateReport}>
+                                <label><span>Rapporttyp</span><select value={reportType} onChange={(event) => { const next = event.target.value as ReportType; setReportType(next); setReportSections(REPORT_SECTION_DEFAULTS[next]); }}><option value="management">Ledning</option><option value="technical">Teknisk</option><option value="risk_register">Riskregister</option></select></label>
+                                <label><span>Format</span><select value={reportFormat} onChange={(event) => setReportFormat(event.target.value as ReportFormat)}><option value="pdf">PDF</option><option value="json">JSON</option><option value="csv">CSV</option></select></label>
+                                <fieldset className="op-report-builder">
+                                  <legend>Välj vad som ska ingå</legend>
+                                  <div className="op-report-builder__toolbar">
+                                    <button type="button" className="secondary-button" onClick={() => setReportSections(REPORT_SECTION_OPTIONS.map((item) => item.id))}>Markera alla</button>
+                                    <button type="button" className="secondary-button" onClick={() => setReportSections(REPORT_SECTION_DEFAULTS[reportType])}>Återställ profil</button>
+                                    <button type="button" className="secondary-button" onClick={() => setReportSections([])}>Avmarkera alla</button>
+                                  </div>
+                                  <div className="op-report-builder__grid">
+                                    {REPORT_SECTION_OPTIONS.map((section) => {
+                                      const checked = reportSections.includes(section.id);
+                                      return <label key={section.id} className={checked ? 'is-selected' : ''}><input type="checkbox" checked={checked} onChange={() => setReportSections((current) => checked ? current.filter((id) => id !== section.id) : [...current, section.id])} /><span><strong>{section.label}</strong><small>{section.description}</small></span></label>;
+                                    })}
+                                  </div>
+                                  <small>Omslag, systemidentitet, rapportdatum och TLP-klassificering ingår alltid.</small>
+                                </fieldset>
+                                <button className="primary-button" disabled={busyAction !== null || reportSections.length === 0}><Icon name="report" size={16} /> Köa rapport ({reportSections.length} delar)</button>
+                              </form>
+          '''
+          replace(path, old, new)
+
+          # CSS
+          css = Path('apps/web/src/styles.css')
+          css.write_text(css.read_text() + '''
+
+          .op-report-builder { grid-column: 1 / -1; border: 1px solid var(--line, #d6dfea); border-radius: 12px; padding: 14px; }
+          .op-report-builder legend { font-weight: 700; padding: 0 6px; }
+          .op-report-builder__toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+          .op-report-builder__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+          .op-report-builder__grid > label { display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--line, #d6dfea); border-radius: 10px; padding: 12px; cursor: pointer; background: var(--surface, #fff); }
+          .op-report-builder__grid > label.is-selected { border-color: #315f8f; box-shadow: 0 0 0 1px #315f8f inset; }
+          .op-report-builder__grid input { margin-top: 3px; }
+          .op-report-builder__grid span { display: grid; gap: 3px; }
+          .op-report-builder__grid small { color: var(--muted, #5f6b7a); line-height: 1.35; }
+          ''')
+
+          # Backend tests
+          test = Path('apps/api/tests/test_reporting.py')
+          test.write_text(test.read_text() + '''
+
+          def test_custom_report_sections_control_payload_and_are_frozen(repository, operational_system):
+              from traceless_api.services.reporting import freeze_report_configuration, render_report
+              import json
+
+              snapshot = build_report_snapshot(repository, operational_system.id)
+              selected = freeze_report_configuration(
+                  snapshot,
+                  report_type="technical",
+                  sections=["executive_summary", "risks", "limitations"],
+              )
+              payload = json.loads(
+                  render_report(
+                      snapshot,
+                      format="json",
+                      report_type="technical",
+                      sections=selected,
+                  )
+              )
+              assert payload["selected_sections"] == ["executive_summary", "risks", "limitations"]
+              assert "summary" in payload
+              assert "risks" in payload
+              assert "limitations" in payload
+              assert "assets" not in payload
+              assert "findings" not in payload
+              assert snapshot["report_configuration"]["sections"] == selected
+
+
+          def test_report_create_rejects_duplicate_sections():
+              from pydantic import ValidationError
+              from traceless_api.models.operational import ReportCreate
+
+              with pytest.raises(ValidationError):
+                  ReportCreate(
+                      format="pdf",
+                      report_type="management",
+                      sections=["risks", "risks"],
+                  )
+          ''')
+          PY
+      - name: Format and update generated API contract
+        working-directory: apps/api
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --locked --extra dev
+          .venv/bin/ruff format src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py
+          .venv/bin/ruff check --fix src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py
+          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
+      - name: Generate frontend API types and test
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run generate:api
+          npm run test -- --run
+          npm run build
+      - name: Run backend report tests
+        working-directory: apps/api
+        run: .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q
+      - name: Commit implementation and remove workflow
+        run: |
+          rm .github/workflows/implement-report-builder.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Implement configurable report builder'
+          git push origin HEAD:agent/initial-platform
