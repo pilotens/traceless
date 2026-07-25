@@ -9,30 +9,67 @@ permissions:
   contents: write
 
 jobs:
-  diagnose-report-builder:
+  implement-report-builder:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           ref: agent/initial-platform
           fetch-depth: 0
-      - name: Capture implementation error
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Apply implementation script
         run: |
           sed -n "/^[[:space:]]*python - <<'PY'$/,/^[[:space:]]*PY$/p" .github/workflows/implement-report-builder.yml | sed '1d;$d;s/^          //' > /tmp/implement.py
           python - <<'PY'
           from pathlib import Path
           path = Path('/tmp/implement.py')
           text = path.read_text()
-          text = text.replace('from pathlib import Path\n', 'from pathlib import Path\nimport textwrap\n', 1)
-          text = text.replace('def replace(path: str, old: str, new: str) -> None:\n    file = Path(path)\n', 'def replace(path: str, old: str, new: str) -> None:\n    old = textwrap.dedent(old)\n    new = textwrap.dedent(new)\n    file = Path(path)\n', 1)
+          text = text.replace('from pathlib import Path\n', 'from pathlib import Path\nimport inspect\n', 1)
+          text = text.replace(
+              'def replace(path: str, old: str, new: str) -> None:\n    file = Path(path)\n',
+              '''def replace(path: str, old: str, new: str) -> None:
+    if path.endswith((".ts", ".tsx")):
+        def normalize(value: str) -> str:
+            trailing = "\\n" if value.endswith("\\n") else ""
+            first = value.splitlines()[0]
+            indent = len(first) - len(first.lstrip())
+            cleaned = inspect.cleandoc(value)
+            return "\\n".join((" " * indent + line) if line else line for line in cleaned.splitlines()) + trailing
+        old = normalize(old)
+        new = normalize(new)
+    file = Path(path)
+''',
+              1,
+          )
           path.write_text(text)
           PY
-          set +e
-          python /tmp/implement.py > implementation-error.log 2>&1
-          status=$?
-          echo "exit_status=$status" >> implementation-error.log
+          python /tmp/implement.py
+      - name: Format backend and update OpenAPI
+        working-directory: apps/api
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --locked --extra dev
+          .venv/bin/ruff format src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py
+          .venv/bin/ruff check --fix src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py
+          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
+      - name: Test frontend
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run generate:api
+          npm run test -- --run
+          npm run build
+      - name: Test report backend
+        working-directory: apps/api
+        run: .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q
+      - name: Commit implementation and restore CI
+        run: |
+          git show 92e20dbb4a3387a3fe8c85bf3ab1634d057303c9:.github/workflows/ci.yml > .github/workflows/ci.yml
+          rm -f .github/workflows/implement-report-builder.yml implementation-error.log
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add implementation-error.log
-          git commit -m 'Capture normalized report builder error'
+          git add -A
+          git commit -m 'Implement configurable report builder'
           git push origin HEAD:agent/initial-platform
