@@ -1,13 +1,4 @@
-.....F.F.....E............                                               [100%]
-==================================== ERRORS ====================================
-_ ERROR at setup of test_custom_report_sections_control_payload_and_are_frozen _
-file /home/runner/work/traceless/traceless/apps/api/tests/test_reporting.py, line 302
-  def test_custom_report_sections_control_payload_and_are_frozen(repository, operational_system):
-E       fixture 'repository' not found
->       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, cov, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
->       use 'pytest --fixtures [testpath]' for help on them.
-
-/home/runner/work/traceless/traceless/apps/api/tests/test_reporting.py:302
+.....F.F..................                                               [100%]
 =================================== FAILURES ===================================
 ___________________ test_each_pdf_report_renders[technical] ____________________
 
@@ -23,7 +14,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 src/traceless_api/services/reporting.py:419: in render_report
     return _render_pdf(payload, report_type=report_type)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-src/traceless_api/services/reporting.py:721: in _render_pdf
+src/traceless_api/services/reporting.py:724: in _render_pdf
     _append_technical_pdf(story, styles, payload)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
@@ -36,7 +27,7 @@ story = [Paragraph(
 'bulletText': None
 'debug': 0
 ) #Paragraph, ...]
-styles = <reportlab.lib.styles.StyleSheet1 object at 0x7ffab56c1a60>
+styles = <reportlab.lib.styles.StyleSheet1 object at 0x7fbead8bd040>
 payload = {'schema_version': 'traceless-report/1.1', 'report_type': 'technical', 'distribution_tlp': 'TLP:AMBER', 'system': {'id': 'system-1', 'name': 'Payments', 'criticality': 'critical'}, ...}
 
     def _append_technical_pdf(story: list[Any], styles: Any, payload: dict[str, Any]) -> None:
@@ -128,10 +119,10 @@ payload = {'schema_version': 'traceless-report/1.1', 'report_type': 'technical',
             )
 E           KeyError: 'title'
 
-src/traceless_api/services/reporting.py:843: KeyError
+src/traceless_api/services/reporting.py:846: KeyError
 __________ test_pdf_tables_do_not_silently_truncate_findings_or_risks __________
 
-monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ffab56c36b0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbeadbea390>
 
     def test_pdf_tables_do_not_silently_truncate_findings_or_risks(
         monkeypatch: pytest.MonkeyPatch,
@@ -159,15 +150,117 @@ monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ffab56c36b0>
             return object()
     
         monkeypatch.setattr(reporting, "_styled_table", capture)
-        reporting._append_technical_pdf(
+>       reporting._append_technical_pdf(
             [],
             styles,
->           reporting._report_payload(snapshot, "technical"),
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            reporting._report_payload(snapshot, "technical"),
         )
-E       TypeError: _report_payload() missing 1 required positional argument: 'selected_sections'
 
-tests/test_reporting.py:188: TypeError
+tests/test_reporting.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+story = [Spacer(1, 14.173228346456694), Paragraph(
+'caseSensitive': 1
+'encoding': 'utf8'
+'text': 'Scope och metod'
+'frags': [P...lor(0,0,0,1), us_lines=[])]
+'style': <ParagraphStyle 'TracelessSmall'>
+'bulletText': None
+'debug': 0
+) #Paragraph, ...]
+styles = <reportlab.lib.styles.StyleSheet1 object at 0x7fbeadbe9eb0>
+payload = {'schema_version': 'traceless-report/1.1', 'report_type': 'technical', 'distribution_tlp': 'TLP:AMBER', 'system': {'id': 'system-1', 'name': 'Payments', 'criticality': 'critical'}, ...}
+
+    def _append_technical_pdf(story: list[Any], styles: Any, payload: dict[str, Any]) -> None:
+        if "summary" in payload:
+            story.extend(
+                [
+                    Paragraph("Sammanfattning", styles["Heading2"]),
+                    _styled_table([[key, value] for key, value in payload["summary"].items()]),
+                ]
+            )
+        if "scope_methodology" in payload:
+            story.extend(
+                [
+                    Spacer(1, 5 * mm),
+                    Paragraph("Scope och metod", styles["Heading2"]),
+                    Paragraph(
+                        escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)),
+                        styles["BodyText"],
+                    ),
+                ]
+            )
+        if "latest_architecture" in payload:
+            story.extend(
+                [
+                    Spacer(1, 5 * mm),
+                    Paragraph("Arkitektur", styles["Heading2"]),
+                    Paragraph(
+                        escape(json.dumps(payload["latest_architecture"], ensure_ascii=False)),
+                        styles["TracelessSmall"],
+                    ),
+                ]
+            )
+        if "assets" in payload or "services" in payload:
+            summary = [
+                ["Tillgångar", len(payload.get("assets", []))],
+                ["Tjänster", len(payload.get("services", []))],
+            ]
+            story.extend(
+                [
+                    Spacer(1, 5 * mm),
+                    Paragraph("Tillgångar och tjänster", styles["Heading2"]),
+                    _styled_table(summary),
+                ]
+            )
+        if "findings" in payload:
+            story.extend([Spacer(1, 5 * mm), Paragraph("Fynd", styles["Heading2"])])
+            findings = payload["findings"]
+            if findings:
+                rows: list[list[Any]] = [["Fynd", "Typ", "CVE", "Status", "CVSS"]]
+                for finding in findings:
+                    rows.append(
+                        [
+                            Paragraph(escape(finding["title"]), styles["TracelessSmall"]),
+                            finding["finding_type"],
+                            finding["cve_id"] or "–",
+                            finding["lifecycle_status"],
+                            finding["cvss_score"] if finding["cvss_score"] is not None else "–",
+                        ]
+                    )
+                story.append(
+                    _styled_table(
+                        rows, header=True, widths=[75 * mm, 25 * mm, 29 * mm, 24 * mm, 14 * mm]
+                    )
+                )
+            else:
+                story.append(
+                    Paragraph("Inga fynd finns i rapportens frysta underlag.", styles["BodyText"])
+                )
+        if "threats" in payload:
+            story.extend(
+                [
+                    Spacer(1, 5 * mm),
+                    Paragraph("Hotbild", styles["Heading2"]),
+                    _styled_table(
+                        [["Hot", "Allvar", "ATT&CK"]]
+                        + [
+                            [
+>                               Paragraph(escape(item["title"]), styles["TracelessSmall"]),
+                                                 ^^^^^^^^^^^^^
+                                item["severity"],
+                                ", ".join(item["attack_patterns"]) or "–",
+                            ]
+                            for item in payload["threats"]
+                        ],
+                        header=True,
+                        widths=[95 * mm, 25 * mm, 47 * mm],
+                    ),
+                ]
+            )
+E           KeyError: 'title'
+
+src/traceless_api/services/reporting.py:846: KeyError
 =============================== warnings summary ===============================
 .venv/lib/python3.12/site-packages/fastapi/testclient.py:1
   /home/runner/work/traceless/traceless/apps/api/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
@@ -176,5 +269,4 @@ tests/test_reporting.py:188: TypeError
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
 FAILED tests/test_reporting.py::test_each_pdf_report_renders[technical] - KeyError: 'title'
-FAILED tests/test_reporting.py::test_pdf_tables_do_not_silently_truncate_findings_or_risks - TypeError: _report_payload() missing 1 required positional argument: 'selected_sections'
-ERROR tests/test_reporting.py::test_custom_report_sections_control_payload_and_are_frozen
+FAILED tests/test_reporting.py::test_pdf_tables_do_not_silently_truncate_findings_or_risks - KeyError: 'title'
