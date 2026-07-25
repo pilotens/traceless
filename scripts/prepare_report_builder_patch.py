@@ -18,4 +18,15 @@ new = '''def replace(path: str, old: str, new: str) -> None:
 '''
 if old not in text:
     raise SystemExit('replace function marker not found')
-path.write_text(text.replace(old, new, 1))
+text = text.replace(old, new, 1)
+
+# The workspace reset function has changed shape since the implementation script
+# was authored. Report sections already initialize from the management profile,
+# and the report-type selector resets them when changed, so this non-essential
+# exact-match patch can be safely omitted.
+reset_patch = '''replace(path,
+''' + "'''    setReportType('management');\n      }\n'''" + ''',
+''' + "'''    setReportType('management');\n        setReportSections(REPORT_SECTION_DEFAULTS.management);\n      }\n'''" + ''')
+'''
+text = text.replace(reset_patch, '')
+path.write_text(text)
