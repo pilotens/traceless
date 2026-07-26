@@ -51,6 +51,14 @@ reporting_text = reporting_text.replace(
     '", ".join(item["attack_patterns"]) or "–"',
     '", ".join(item.get("attack_patterns", [])) or "–"',
 )
+reporting_text = reporting_text.replace(
+    'f"{len(payload[\'vulnerability_observations\'])} observationer ingår i det frysta underlaget."',
+    '(\n                            f"{len(payload[\'vulnerability_observations\'])} observationer "\n                            "ingår i det frysta underlaget."\n                        )',
+)
+reporting_text = reporting_text.replace(
+    '"Råobservationslistan är avsiktligt begränsad; totalsiffror kommer från importmanifesten."',
+    '(\n                        "Råobservationslistan är avsiktligt begränsad; "\n                        "totalsiffror kommer från importmanifesten."\n                    )',
+)
 reporting_file.write_text(reporting_text)
 
 test_file = Path('apps/api/tests/test_reporting.py')
@@ -86,4 +94,4 @@ replacement = '''\ndef test_custom_report_sections_control_payload_and_are_froze
 test_file.write_text(test_text[:start] + replacement + test_text[end:])
 """
 path.write_text(text)
-# final-trigger
+# final-trigger-2
