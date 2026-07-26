@@ -168,6 +168,136 @@
         "title": "ApiRootResponse",
         "type": "object"
       },
+      "ArchitectureBusinessContextInput": {
+        "additionalProperties": false,
+        "properties": {
+          "business_owner": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Business Owner",
+            "type": "string"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "data_categories": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Data Categories",
+            "type": "array"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/ArchitectureBusinessImpactInput"
+          },
+          "processes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Processes",
+            "type": "array"
+          },
+          "recovery_point_objective_hours": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Point Objective Hours"
+          },
+          "recovery_time_objective_hours": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Time Objective Hours"
+          },
+          "regulations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Regulations",
+            "type": "array"
+          }
+        },
+        "title": "ArchitectureBusinessContextInput",
+        "type": "object"
+      },
+      "ArchitectureBusinessImpactInput": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Availability",
+            "type": "integer"
+          },
+          "confidentiality": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Confidentiality",
+            "type": "integer"
+          },
+          "financial": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Financial",
+            "type": "integer"
+          },
+          "integrity": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Integrity",
+            "type": "integer"
+          },
+          "regulatory": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Regulatory",
+            "type": "integer"
+          },
+          "reputation": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Reputation",
+            "type": "integer"
+          },
+          "safety": {
+            "default": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Safety",
+            "type": "integer"
+          }
+        },
+        "title": "ArchitectureBusinessImpactInput",
+        "type": "object"
+      },
       "ArchitectureEdgeInput": {
         "additionalProperties": false,
         "properties": {
@@ -242,6 +372,9 @@
       "ArchitectureGraphInput": {
         "additionalProperties": false,
         "properties": {
+          "business_context": {
+            "$ref": "#/components/schemas/ArchitectureBusinessContextInput"
+          },
           "edges": {
             "items": {
               "$ref": "#/components/schemas/ArchitectureEdgeInput"
@@ -1529,6 +1662,66 @@
         "title": "CanonicalIntelRecord",
         "type": "object"
       },
+      "CisoRiskSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "active_threats": {
+            "minimum": 0.0,
+            "title": "Active Threats",
+            "type": "integer"
+          },
+          "critical_risks": {
+            "minimum": 0.0,
+            "title": "Critical Risks",
+            "type": "integer"
+          },
+          "external_assets": {
+            "minimum": 0.0,
+            "title": "External Assets",
+            "type": "integer"
+          },
+          "high_risks": {
+            "minimum": 0.0,
+            "title": "High Risks",
+            "type": "integer"
+          },
+          "kev_findings": {
+            "minimum": 0.0,
+            "title": "Kev Findings",
+            "type": "integer"
+          },
+          "open_findings": {
+            "minimum": 0.0,
+            "title": "Open Findings",
+            "type": "integer"
+          },
+          "recommended_actions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Recommended Actions",
+            "type": "array"
+          },
+          "security_score": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Security Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "security_score",
+          "critical_risks",
+          "high_risks",
+          "open_findings",
+          "kev_findings",
+          "active_threats",
+          "external_assets"
+        ],
+        "title": "CisoRiskSummary",
+        "type": "object"
+      },
       "CurrentPrincipalResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1629,6 +1822,50 @@
           "system_ids"
         ],
         "title": "CurrentPrincipalResponse",
+        "type": "object"
+      },
+      "CyberRiskGraphView": {
+        "additionalProperties": false,
+        "properties": {
+          "business_context": {
+            "$ref": "#/components/schemas/ArchitectureBusinessContextInput"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/RiskGraphEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/RiskGraphNode"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CisoRiskSummary"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "system_id",
+          "business_context",
+          "summary",
+          "nodes",
+          "edges"
+        ],
+        "title": "CyberRiskGraphView",
         "type": "object"
       },
       "ExternalIntelligenceCheckpointView": {
@@ -4430,6 +4667,122 @@
           "created_at"
         ],
         "title": "ReportView",
+        "type": "object"
+      },
+      "RiskGraphEdge": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "relationship": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Relationship",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target",
+          "relationship"
+        ],
+        "title": "RiskGraphEdge",
+        "type": "object"
+      },
+      "RiskGraphNode": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "business_capability",
+              "regulation",
+              "system",
+              "architecture_component",
+              "asset",
+              "service",
+              "finding",
+              "threat",
+              "risk",
+              "action"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label"
+        ],
+        "title": "RiskGraphNode",
         "type": "object"
       },
       "RiskSummaryView": {
@@ -9499,6 +9852,72 @@
         "summary": "Enqueue Report",
         "tags": [
           "background-jobs"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/risk-graph": {
+      "get": {
+        "operationId": "cyber_risk_graph_api_v1_operational_systems__system_id__risk_graph_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberRiskGraphView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cyber Risk Graph",
+        "tags": [
+          "operational"
         ]
       }
     },

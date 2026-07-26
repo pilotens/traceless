@@ -11,6 +11,7 @@ import {
   type BackgroundJobEnqueueResult,
   type BackgroundJobList,
   type Criticality,
+  type CyberRiskGraphView,
   type Finding,
   type FindingEvidence,
   type FindingLifecycleStatus,
@@ -47,6 +48,7 @@ import {
   type VulnerabilityScanImportInput,
 } from '../api';
 import { Icon } from './Icon';
+import { CyberRiskGraph } from './CyberRiskGraph';
 import { ExternalIntelligenceConnectorPanel } from './ExternalIntelligenceConnectorPanel';
 import { OperationalArchitectureEditor } from './OperationalArchitectureEditor';
 import { EmptyState, EntityCards, PaginationControls } from './operational/Presentation';
@@ -101,6 +103,7 @@ type WorkspaceTab =
   | 'findings'
   | 'risks'
   | 'architecture'
+  | 'risk_graph'
   | 'reports';
 
 interface OperationalWorkspaceProps {
@@ -119,6 +122,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedSystemId, setSelectedSystemId] = useState('');
   const [overview, setOverview] = useState<PipelineOverview | null>(null);
+  const [riskGraph, setRiskGraph] = useState<CyberRiskGraphView | null>(null);
   const [scans, setScans] = useState<ScanJob[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [sourceSnapshots, setSourceSnapshots] = useState<AssetSourceSnapshot[]>([]);
@@ -217,6 +221,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
 
   function resetSystemData(): void {
     setOverview(null);
+    setRiskGraph(null);
     setScans([]);
     setReports([]);
     setSourceSnapshots([]);
@@ -391,6 +396,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
     setContextLoadError(null);
     Promise.all([
       api.getOverview(selectedSystemId),
+      api.getRiskGraph(selectedSystemId),
       api.listAssetPage(selectedSystemId, { limit: COLLECTION_PAGE_SIZE }),
       api.listThreatPage(selectedSystemId, { limit: COLLECTION_PAGE_SIZE }),
       api.listScans(selectedSystemId),
@@ -409,6 +415,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
     ])
       .then(([
         nextOverview,
+        nextRiskGraph,
         nextAssetPage,
         nextThreatPage,
         nextScans,
@@ -423,6 +430,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
       ]) => {
         if (!active || !isSystemContextCurrent(context)) return;
         setOverview(nextOverview);
+        setRiskGraph(nextRiskGraph);
         setAssetPage(nextAssetPage);
         setThreatPage(nextThreatPage);
         setScans(nextScans);
@@ -574,6 +582,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
     const context = captureSystemContext(systemId);
     const [
       nextOverview,
+      nextRiskGraph,
       nextAssetPage,
       nextThreatPage,
       nextScans,
@@ -587,6 +596,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
       nextBackgroundJobs,
     ] = await Promise.all([
       api.getOverview(systemId),
+      api.getRiskGraph(systemId),
       api.listAssetPage(systemId, { limit: COLLECTION_PAGE_SIZE }),
       api.listThreatPage(systemId, { limit: COLLECTION_PAGE_SIZE }),
       api.listScans(systemId),
@@ -607,6 +617,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
     ]);
     if (!shouldApply() || !isSystemContextCurrent(context)) return;
     setOverview(nextOverview);
+    setRiskGraph(nextRiskGraph);
     setAssetPage(nextAssetPage);
     setThreatPage(nextThreatPage);
     setScans(nextScans);
@@ -1269,6 +1280,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
     { id: 'findings', label: 'Fynd', count: collectionTotals.findings },
     { id: 'risks', label: 'Risker', count: collectionTotals.risks },
     { id: 'architecture', label: 'Arkitektur' },
+    { id: 'risk_graph', label: 'Riskgraf', count: riskGraph?.summary.critical_risks ?? 0 },
     { id: 'reports', label: 'Rapporter', count: reports.length },
   ];
 
@@ -1434,6 +1446,28 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
               </article>
             ))}
           </section>
+
+
+
+{riskGraph && (
+  <section className="op-ciso-dashboard panel" aria-label="CISO-läge">
+    <header className="op-section-heading">
+      <div><span className="section-kicker">CISO-LÄGE</span><h2>Beslutsorienterad cyberrisk</h2></div>
+      <button className="secondary-button" onClick={() => selectWorkspaceTab('risk_graph')} type="button">Öppna Cyber Risk Graph</button>
+    </header>
+    <div className="op-ciso-dashboard__metrics">
+      <article><strong>{riskGraph.summary.security_score}/100</strong><small>Säkerhetspoäng</small></article>
+      <article><strong>{riskGraph.summary.critical_risks}</strong><small>Kritiska risker</small></article>
+      <article><strong>{riskGraph.summary.kev_findings}</strong><small>KEV-fynd</small></article>
+      <article><strong>{riskGraph.summary.external_assets}</strong><small>Externa tillgångar</small></article>
+      <article><strong>{riskGraph.summary.active_threats}</strong><small>Aktiva hot</small></article>
+    </div>
+    <div className="op-ciso-dashboard__body">
+      <div><strong>{riskGraph.business_context.business_owner || selectedSystem.owner}</strong><span>{riskGraph.business_context.capabilities.join(' · ') || 'Verksamhetsförmågor behöver anges i arkitekturvyn.'}</span></div>
+      <ol>{riskGraph.summary.recommended_actions.slice(0, 3).map((action) => <li key={action}>{action}</li>)}</ol>
+    </div>
+  </section>
+)}
 
           <section className="op-pipeline panel" aria-label="Analyskedja">
             {[
@@ -1993,6 +2027,18 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
                 page={riskPage}
               />
             )}
+
+
+
+{activeTab === 'risk_graph' && (
+  riskGraph ? (
+    <CyberRiskGraph graph={riskGraph} />
+  ) : (
+    <EmptyState title="Riskgrafen kunde inte byggas">
+      Skapa eller välj ett system och lägg till verksamhetskontext i arkitekturvyn.
+    </EmptyState>
+  )
+)}
 
             {activeTab === 'architecture' && (
               <OperationalArchitectureEditor

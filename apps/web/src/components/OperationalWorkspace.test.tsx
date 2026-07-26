@@ -8,6 +8,7 @@ import type {
   BackgroundJobEnqueueResult,
   BackgroundJobList,
   BackgroundJobListOptions,
+  CyberRiskGraphView,
   ExternalIntelligenceSyncRunList,
   ExternalIntelligenceSyncStatus,
   GlobalIntelFilters,
@@ -261,6 +262,45 @@ const overview: PipelineOverview = {
   collections_truncated: false,
 };
 
+const riskGraph: CyberRiskGraphView = {
+  system_id: system.id,
+  business_context: {
+    business_owner: 'Head of Payments',
+    capabilities: ['Accept payments'],
+    processes: ['Card authorization'],
+    data_categories: ['Payment data'],
+    regulations: ['DORA', 'PCI DSS'],
+    recovery_time_objective_hours: 2,
+    recovery_point_objective_hours: 0.5,
+    impact: {
+      confidentiality: 5,
+      integrity: 5,
+      availability: 5,
+      financial: 5,
+      regulatory: 5,
+      reputation: 4,
+      safety: 1,
+    },
+  },
+  summary: {
+    security_score: 61,
+    critical_risks: 1,
+    high_risks: 0,
+    open_findings: 1,
+    kev_findings: 1,
+    active_threats: 1,
+    external_assets: 1,
+    recommended_actions: ['Patcha eller isolera CVE-2099-12345 omedelbart.'],
+  },
+  nodes: [
+    { id: 'system:system-1', kind: 'system', label: 'Payment API', severity: 'critical', status: 'operational', metadata: {} },
+    { id: 'risk:risk-1', kind: 'risk', label: 'Exploitation of CVE-2099-12345', severity: 'critical', status: 'open', metadata: {} },
+  ],
+  edges: [{ id: 'edge:1', source: 'risk:risk-1', target: 'system:system-1', relationship: 'affects', metadata: {} }],
+  truncated: false,
+};
+
+
 const report: Report = {
   id: 'report-1',
   system_id: system.id,
@@ -406,6 +446,7 @@ function createApi() {
     queueNmapScan: vi.fn(async () => queuedScan),
     importNmapXml: vi.fn(async () => completedScan),
     getOverview: vi.fn(async (_systemId: string) => overview),
+    getRiskGraph: vi.fn(async () => riskGraph),
     listAssetPage: vi.fn(async () => ({
       items: overview.assets,
       total: overview.collection_totals?.assets ?? overview.assets.length,
@@ -729,6 +770,8 @@ describe('OperationalWorkspace', () => {
     expect(await screen.findByRole('heading', { name: 'Payment API' })).toBeInTheDocument();
     expect(screen.getByText('Auktoriserad användning krävs')).toBeInTheDocument();
     expect(screen.getByText(/ingen kontinuerlig liveinsamling hävdas/i)).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'CISO-läge' })).toBeInTheDocument();
+    expect(screen.getByText('61/100')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: /Tillgångar/ }));
     await user.click(screen.getByRole('button', { name: /payments\.example\.test/ }));

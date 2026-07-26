@@ -260,6 +260,56 @@ export interface Risk {
 
 export type RiskSummary = Omit<Risk, 'rationale'>;
 
+export type RiskGraphNodeKind =
+  | 'business_capability'
+  | 'regulation'
+  | 'system'
+  | 'architecture_component'
+  | 'asset'
+  | 'service'
+  | 'finding'
+  | 'threat'
+  | 'risk'
+  | 'action';
+
+export interface RiskGraphNode {
+  id: string;
+  kind: RiskGraphNodeKind;
+  label: string;
+  severity: Criticality | null;
+  status: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface RiskGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  relationship: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface CisoRiskSummary {
+  security_score: number;
+  critical_risks: number;
+  high_risks: number;
+  open_findings: number;
+  kev_findings: number;
+  active_threats: number;
+  external_assets: number;
+  recommended_actions: string[];
+}
+
+export interface CyberRiskGraphView {
+  system_id: string;
+  business_context: ArchitectureBusinessContextInput;
+  summary: CisoRiskSummary;
+  nodes: RiskGraphNode[];
+  edges: RiskGraphEdge[];
+  truncated: boolean;
+}
+
+
 export interface ArchitectureSnapshot {
   id: string;
   system_id: string;
@@ -330,10 +380,33 @@ export interface ArchitectureRiskContextInput {
   evidence_reference: string;
 }
 
+export interface ArchitectureBusinessImpactInput {
+  confidentiality: number;
+  integrity: number;
+  availability: number;
+  financial: number;
+  regulatory: number;
+  reputation: number;
+  safety: number;
+}
+
+export interface ArchitectureBusinessContextInput {
+  business_owner: string;
+  capabilities: string[];
+  processes: string[];
+  data_categories: string[];
+  regulations: string[];
+  recovery_time_objective_hours: number | null;
+  recovery_point_objective_hours: number | null;
+  impact: ArchitectureBusinessImpactInput;
+}
+
+
 export interface ArchitectureGraphInput {
   schema_version: '1.0';
   publication_state: 'draft';
   warning: string;
+  business_context: ArchitectureBusinessContextInput;
   zones: ArchitectureZoneInput[];
   nodes: ArchitectureNodeInput[];
   edges: ArchitectureEdgeInput[];
@@ -814,6 +887,7 @@ export interface OperationalApi {
   queueNmapScan(systemId: string, authorizationId: string): Promise<ScanJob>;
   importNmapXml(systemId: string, authorizationId: string, xml: Blob): Promise<ScanJob>;
   getOverview(systemId: string): Promise<PipelineOverview>;
+  getRiskGraph(systemId: string): Promise<CyberRiskGraphView>;
   listAssetPage(
     systemId: string,
     options?: { limit?: number; offset?: number },
@@ -1048,6 +1122,8 @@ export function createOperationalApi(options: ApiOptions = {}): OperationalApi {
         },
       ),
     getOverview: (systemId) => json<PipelineOverview>(`${systemPath(systemId)}/overview`),
+    getRiskGraph: (systemId) =>
+      json<CyberRiskGraphView>(`${systemPath(systemId)}/risk-graph`),
     listAssetPage: (systemId, options = {}) => {
       const parameters = new URLSearchParams();
       if (options.limit !== undefined) parameters.set('limit', String(options.limit));

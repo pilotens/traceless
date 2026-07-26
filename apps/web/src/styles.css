@@ -818,3 +818,35 @@ h1, h2, h3, h4, p { margin: 0; }
 .op-report-builder__grid input { margin-top: 3px; }
 .op-report-builder__grid span { display: grid; gap: 3px; }
 .op-report-builder__grid small { color: var(--muted, #5f6b7a); line-height: 1.35; }
+
+
+.op-business-context { margin-bottom: 16px; }
+.op-business-context__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.op-business-context__grid label, .op-business-impact label { display: grid; gap: 6px; }
+.op-business-impact { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; margin-top: 14px; }
+.op-ciso-dashboard { display: grid; gap: 16px; }
+.op-ciso-dashboard__metrics, .op-risk-graph-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.op-ciso-dashboard__metrics article, .op-risk-graph-summary article { border: 1px solid var(--line, #d6dfea); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.op-ciso-dashboard__metrics strong, .op-risk-graph-summary strong { font-size: 1.45rem; }
+.op-ciso-dashboard__body { display: grid; grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.2fr); gap: 18px; }
+.op-ciso-dashboard__body > div { display: grid; gap: 5px; align-content: start; }
+.op-ciso-dashboard__body ol, .op-risk-graph-actions ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.op-risk-graph-workspace { display: grid; gap: 14px; }
+.op-risk-graph-context { display: grid; grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1.2fr); gap: 20px; }
+.op-risk-graph-context dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.op-risk-graph-context dl div { border-bottom: 1px solid var(--line, #d6dfea); padding-bottom: 8px; }
+.op-risk-graph-context dt { font-size: .78rem; color: var(--muted, #5f6b7a); }
+.op-risk-graph-context dd { margin: 3px 0 0; }
+.op-risk-graph-canvas { height: min(72vh, 760px); min-height: 520px; padding: 0; overflow: hidden; }
+.op-risk-graph-node { width: 220px; border-radius: 12px; border: 1px solid var(--line, #d6dfea); background: var(--surface, #fff); padding: 10px; }
+.op-risk-graph-node__content { display: grid; gap: 3px; text-align: left; }
+.op-risk-graph-node__content small, .op-risk-graph-node__content em { color: var(--muted, #5f6b7a); font-size: .7rem; font-style: normal; }
+.op-risk-graph-node__content b { justify-self: start; margin-top: 4px; }
+.op-risk-graph-node--risk, .op-risk-graph-node--finding, .op-risk-graph-node--threat { box-shadow: 0 0 0 1px rgba(160, 65, 65, .16) inset; }
+.op-risk-graph-node--business_capability, .op-risk-graph-node--regulation { box-shadow: 0 0 0 1px rgba(49, 95, 143, .18) inset; }
+.op-risk-graph-node--action { box-shadow: 0 0 0 1px rgba(42, 120, 82, .18) inset; }
+.op-risk-graph-edge .react-flow__edge-text { font-size: 9px; }
+@media (max-width: 760px) {
+  .op-ciso-dashboard__body, .op-risk-graph-context { grid-template-columns: 1fr; }
+  .op-risk-graph-canvas { min-height: 460px; }
+}

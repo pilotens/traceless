@@ -35,6 +35,7 @@ from traceless_api.models.operational import (
     ArchitectureSnapshotView,
     ArchitectureVersionCreate,
     AssetView,
+    CyberRiskGraphView,
     FindingEvidenceView,
     FindingLifecycleUpdate,
     FindingView,
@@ -66,6 +67,7 @@ from traceless_api.services.operational_repository import (
     OperationalConflictError,
     OperationalNotFoundError,
 )
+from traceless_api.services.risk_graph import build_cyber_risk_graph
 from traceless_api.services.scan_ingestion import ingest_scanner_result
 
 router = APIRouter(prefix="/operational", tags=["operational"])
@@ -589,6 +591,18 @@ def list_finding_evidence(
 
 
 @router.get(
+    "/systems/{system_id}/risk-graph",
+    response_model=CyberRiskGraphView,
+    dependencies=[Depends(require_read_access)],
+)
+def cyber_risk_graph(
+    system_id: UUID,
+    repository: OperationalRepositoryDependency,
+) -> CyberRiskGraphView:
+    return build_cyber_risk_graph(repository, system_id)
+
+
+@router.get(
     "/systems/{system_id}/overview",
     response_model=PipelineOverview,
     dependencies=[Depends(require_read_access)],
@@ -598,21 +612,13 @@ def pipeline_overview(
     repository: OperationalRepositoryDependency,
     collection_limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> PipelineOverview:
-    asset_page = list_current_asset_page(
-        repository, system_id, limit=collection_limit, offset=0
-    )
+    asset_page = list_current_asset_page(repository, system_id, limit=collection_limit, offset=0)
     service_page = list_current_service_page(
         repository, system_id, limit=collection_limit, offset=0
     )
-    finding_page = list_finding_page(
-        repository, system_id, limit=collection_limit, offset=0
-    )
-    threat_page = list_threat_page(
-        repository, system_id, limit=collection_limit, offset=0
-    )
-    risk_page = list_risk_page(
-        repository, system_id, limit=collection_limit, offset=0
-    )
+    finding_page = list_finding_page(repository, system_id, limit=collection_limit, offset=0)
+    threat_page = list_threat_page(repository, system_id, limit=collection_limit, offset=0)
+    risk_page = list_risk_page(repository, system_id, limit=collection_limit, offset=0)
     collection_totals = {
         "assets": asset_page.total,
         "services": service_page.total,
@@ -639,7 +645,5 @@ def pipeline_overview(
         risks=[RiskView.model_validate(row) for row in risk_page.rows],
         collection_totals=collection_totals,
         collection_limit=collection_limit,
-        collections_truncated=any(
-            total > collection_limit for total in collection_totals.values()
-        ),
+        collections_truncated=any(total > collection_limit for total in collection_totals.values()),
     )

@@ -217,6 +217,42 @@ class ArchitectureRiskContextInput(StrictModel):
         return self
 
 
+class ArchitectureBusinessImpactInput(StrictModel):
+    confidentiality: int = Field(default=3, ge=1, le=5)
+    integrity: int = Field(default=3, ge=1, le=5)
+    availability: int = Field(default=3, ge=1, le=5)
+    financial: int = Field(default=3, ge=1, le=5)
+    regulatory: int = Field(default=3, ge=1, le=5)
+    reputation: int = Field(default=3, ge=1, le=5)
+    safety: int = Field(default=1, ge=1, le=5)
+
+
+class ArchitectureBusinessContextInput(StrictModel):
+    business_owner: str = Field(default="", max_length=160)
+    capabilities: list[str] = Field(default_factory=list, max_length=50)
+    processes: list[str] = Field(default_factory=list, max_length=50)
+    data_categories: list[str] = Field(default_factory=list, max_length=50)
+    regulations: list[str] = Field(default_factory=list, max_length=50)
+    recovery_time_objective_hours: float | None = Field(default=None, ge=0, le=8_760)
+    recovery_point_objective_hours: float | None = Field(default=None, ge=0, le=8_760)
+    impact: ArchitectureBusinessImpactInput = Field(default_factory=ArchitectureBusinessImpactInput)
+
+    @field_validator(
+        "capabilities",
+        "processes",
+        "data_categories",
+        "regulations",
+    )
+    @classmethod
+    def values_are_normalized_and_unique(cls, values: list[str]) -> list[str]:
+        normalized = [value.strip() for value in values if value.strip()]
+        if any(len(value) > 160 for value in normalized):
+            raise ValueError("business context values may not exceed 160 characters")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("business context values must be unique")
+        return normalized
+
+
 class ArchitectureGraphInput(StrictModel):
     schema_version: Literal["1.0"] = "1.0"
     publication_state: Literal["draft"] = "draft"
@@ -226,6 +262,9 @@ class ArchitectureGraphInput(StrictModel):
             "require review before the model is published."
         ),
         max_length=1_000,
+    )
+    business_context: ArchitectureBusinessContextInput = Field(
+        default_factory=ArchitectureBusinessContextInput
     )
     zones: list[ArchitectureZoneInput] = Field(default_factory=list, max_length=100)
     nodes: list[ArchitectureNodeInput] = Field(default_factory=list, max_length=500)
@@ -567,6 +606,57 @@ class RiskView(StrictModel):
     updated_at: AwareDatetime
     closed_at: AwareDatetime | None
     evidence_status: Literal["current", "unobserved", "stale", "unknown"]
+
+
+RiskGraphNodeKind = Literal[
+    "business_capability",
+    "regulation",
+    "system",
+    "architecture_component",
+    "asset",
+    "service",
+    "finding",
+    "threat",
+    "risk",
+    "action",
+]
+
+
+class RiskGraphNode(StrictModel):
+    id: str = Field(min_length=1, max_length=240)
+    kind: RiskGraphNodeKind
+    label: str = Field(min_length=1, max_length=500)
+    severity: Criticality | None = None
+    status: str | None = Field(default=None, max_length=80)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class RiskGraphEdge(StrictModel):
+    id: str = Field(min_length=1, max_length=300)
+    source: str = Field(min_length=1, max_length=240)
+    target: str = Field(min_length=1, max_length=240)
+    relationship: str = Field(min_length=1, max_length=80)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class CisoRiskSummary(StrictModel):
+    security_score: int = Field(ge=0, le=100)
+    critical_risks: int = Field(ge=0)
+    high_risks: int = Field(ge=0)
+    open_findings: int = Field(ge=0)
+    kev_findings: int = Field(ge=0)
+    active_threats: int = Field(ge=0)
+    external_assets: int = Field(ge=0)
+    recommended_actions: list[str] = Field(default_factory=list, max_length=10)
+
+
+class CyberRiskGraphView(StrictModel):
+    system_id: UUID
+    business_context: ArchitectureBusinessContextInput
+    summary: CisoRiskSummary
+    nodes: list[RiskGraphNode]
+    edges: list[RiskGraphEdge]
+    truncated: bool = False
 
 
 class PipelineCollectionTotals(StrictModel):

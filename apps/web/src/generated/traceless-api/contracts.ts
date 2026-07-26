@@ -102,6 +102,94 @@ export interface ApiRootResponse {
   version: string;
 }
 
+/** ArchitectureBusinessContextInput */
+export interface ArchitectureBusinessContextInput {
+  /**
+   * Business Owner
+   * @maxLength 160
+   * @default ""
+   */
+  business_owner?: string;
+  /**
+   * Capabilities
+   * @maxItems 50
+   */
+  capabilities?: string[];
+  /**
+   * Data Categories
+   * @maxItems 50
+   */
+  data_categories?: string[];
+  impact?: ArchitectureBusinessImpactInput;
+  /**
+   * Processes
+   * @maxItems 50
+   */
+  processes?: string[];
+  /** Recovery Point Objective Hours */
+  recovery_point_objective_hours?: number | null;
+  /** Recovery Time Objective Hours */
+  recovery_time_objective_hours?: number | null;
+  /**
+   * Regulations
+   * @maxItems 50
+   */
+  regulations?: string[];
+}
+
+/** ArchitectureBusinessImpactInput */
+export interface ArchitectureBusinessImpactInput {
+  /**
+   * Availability
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  availability?: number;
+  /**
+   * Confidentiality
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  confidentiality?: number;
+  /**
+   * Financial
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  financial?: number;
+  /**
+   * Integrity
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  integrity?: number;
+  /**
+   * Regulatory
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  regulatory?: number;
+  /**
+   * Reputation
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  reputation?: number;
+  /**
+   * Safety
+   * @min 1
+   * @max 5
+   * @default 1
+   */
+  safety?: number;
+}
+
 /** ArchitectureEdgeInput */
 export interface ArchitectureEdgeInput {
   /** Encrypted */
@@ -135,6 +223,7 @@ export interface ArchitectureEdgeInput {
 
 /** ArchitectureGraphInput */
 export interface ArchitectureGraphInput {
+  business_context?: ArchitectureBusinessContextInput;
   /**
    * Edges
    * @maxItems 2000
@@ -776,6 +865,51 @@ export interface CanonicalIntelRecord {
   vulnerability?: VulnerabilitySignals | null;
 }
 
+/** CisoRiskSummary */
+export interface CisoRiskSummary {
+  /**
+   * Active Threats
+   * @min 0
+   */
+  active_threats: number;
+  /**
+   * Critical Risks
+   * @min 0
+   */
+  critical_risks: number;
+  /**
+   * External Assets
+   * @min 0
+   */
+  external_assets: number;
+  /**
+   * High Risks
+   * @min 0
+   */
+  high_risks: number;
+  /**
+   * Kev Findings
+   * @min 0
+   */
+  kev_findings: number;
+  /**
+   * Open Findings
+   * @min 0
+   */
+  open_findings: number;
+  /**
+   * Recommended Actions
+   * @maxItems 10
+   */
+  recommended_actions?: string[];
+  /**
+   * Security Score
+   * @min 0
+   * @max 100
+   */
+  security_score: number;
+}
+
 /** CurrentPrincipalResponse */
 export interface CurrentPrincipalResponse {
   /** Actor */
@@ -805,6 +939,26 @@ export interface CurrentPrincipalResponse {
   subject: string;
   /** System Ids */
   system_ids: string[] | null;
+}
+
+/** CyberRiskGraphView */
+export interface CyberRiskGraphView {
+  business_context: ArchitectureBusinessContextInput;
+  /** Edges */
+  edges: RiskGraphEdge[];
+  /** Nodes */
+  nodes: RiskGraphNode[];
+  summary: CisoRiskSummary;
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /**
+   * Truncated
+   * @default false
+   */
+  truncated?: boolean;
 }
 
 /** ExternalIntelligenceCheckpointView */
@@ -2152,6 +2306,70 @@ export interface ReportView {
   system_id: string;
   /** Withdrawal Reason */
   withdrawal_reason?: string | null;
+}
+
+/** RiskGraphEdge */
+export interface RiskGraphEdge {
+  /**
+   * Id
+   * @minLength 1
+   * @maxLength 300
+   */
+  id: string;
+  /** Metadata */
+  metadata?: Record<string, any>;
+  /**
+   * Relationship
+   * @minLength 1
+   * @maxLength 80
+   */
+  relationship: string;
+  /**
+   * Source
+   * @minLength 1
+   * @maxLength 240
+   */
+  source: string;
+  /**
+   * Target
+   * @minLength 1
+   * @maxLength 240
+   */
+  target: string;
+}
+
+/** RiskGraphNode */
+export interface RiskGraphNode {
+  /**
+   * Id
+   * @minLength 1
+   * @maxLength 240
+   */
+  id: string;
+  /** Kind */
+  kind:
+    | "business_capability"
+    | "regulation"
+    | "system"
+    | "architecture_component"
+    | "asset"
+    | "service"
+    | "finding"
+    | "threat"
+    | "risk"
+    | "action";
+  /**
+   * Label
+   * @minLength 1
+   * @maxLength 500
+   */
+  label: string;
+  /** Metadata */
+  metadata?: Record<string, any>;
+  /** Severity */
+  severity?: "low" | "medium" | "high" | "critical" | null;
+  /** Status */
+  status?: string | null;
 }
 
 /** RiskSummaryView */

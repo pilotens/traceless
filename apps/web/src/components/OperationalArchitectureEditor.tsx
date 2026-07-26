@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } fro
 import '@xyflow/react/dist/style.css';
 
 import type {
+  ArchitectureBusinessContextInput,
   ArchitectureEdgeInput,
   ArchitectureGraphInput,
   ArchitectureNodeInput,
@@ -149,14 +150,81 @@ function graphArray(graph: Record<string, unknown>, key: string): Record<string,
     : [];
 }
 
+const DEFAULT_BUSINESS_CONTEXT: ArchitectureBusinessContextInput = {
+  business_owner: '',
+  capabilities: [],
+  processes: [],
+  data_categories: [],
+  regulations: [],
+  recovery_time_objective_hours: null,
+  recovery_point_objective_hours: null,
+  impact: {
+    confidentiality: 3,
+    integrity: 3,
+    availability: 3,
+    financial: 3,
+    regulatory: 3,
+    reputation: 3,
+    safety: 1,
+  },
+};
+
+function stringListValue(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : [];
+}
+
+function numericImpact(value: unknown, fallback: number): number {
+  return typeof value === 'number' && value >= 1 && value <= 5 ? value : fallback;
+}
+
+function normalizeBusinessContext(graph: Record<string, unknown>): ArchitectureBusinessContextInput {
+  const raw = objectValue(graph.business_context);
+  const impact = objectValue(raw.impact);
+  return {
+    business_owner: stringValue(raw.business_owner) ?? '',
+    capabilities: stringListValue(raw.capabilities),
+    processes: stringListValue(raw.processes),
+    data_categories: stringListValue(raw.data_categories),
+    regulations: stringListValue(raw.regulations),
+    recovery_time_objective_hours:
+      typeof raw.recovery_time_objective_hours === 'number'
+        ? raw.recovery_time_objective_hours
+        : null,
+    recovery_point_objective_hours:
+      typeof raw.recovery_point_objective_hours === 'number'
+        ? raw.recovery_point_objective_hours
+        : null,
+    impact: {
+      confidentiality: numericImpact(impact.confidentiality, 3),
+      integrity: numericImpact(impact.integrity, 3),
+      availability: numericImpact(impact.availability, 3),
+      financial: numericImpact(impact.financial, 3),
+      regulatory: numericImpact(impact.regulatory, 3),
+      reputation: numericImpact(impact.reputation, 3),
+      safety: numericImpact(impact.safety, 1),
+    },
+  };
+}
+
+function parseCommaSeparated(value: string): string[] {
+  return [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))];
+}
+
+
 function normalizeGraph(snapshot: ArchitectureSnapshot | null): {
   nodes: EditorNode[];
   edges: EditorEdge[];
   zones: ArchitectureZoneInput[];
   riskContexts: EditorRiskContext[];
+  businessContext: ArchitectureBusinessContextInput;
 } {
-  if (!snapshot) return { nodes: [], edges: [], zones: [], riskContexts: [] };
+  if (!snapshot) {
+    return { nodes: [], edges: [], zones: [], riskContexts: [], businessContext: DEFAULT_BUSINESS_CONTEXT };
+  }
   const graph = snapshot.graph;
+  const businessContext = normalizeBusinessContext(graph);
   const zones = graphArray(graph, 'zones').flatMap((zone, index) => {
     const id = stringValue(zone.id) ?? `zone:${index + 1}`;
     const name = stringValue(zone.name) ?? `Zon ${index + 1}`;
@@ -269,7 +337,7 @@ function normalizeGraph(snapshot: ArchitectureSnapshot | null): {
       verified_at: verifiedAt,
     }];
   });
-  return { nodes, edges, zones, riskContexts };
+  return { nodes, edges, zones, riskContexts, businessContext };
 }
 
 function makeId(prefix: string): string {
@@ -338,12 +406,14 @@ function buildGraph(
   edges: EditorEdge[],
   zones: ArchitectureZoneInput[],
   riskContexts: EditorRiskContext[],
+  businessContext: ArchitectureBusinessContextInput,
 ): ArchitectureGraphInput {
   return {
     schema_version: '1.0',
     publication_state: 'draft',
     warning:
       'Manuellt redigerad arkitektur. Komponenter, trust boundaries och dataflöden måste granskas innan publicering.',
+    business_context: businessContext,
     zones,
     nodes: nodes.map<ArchitectureNodeInput>((node) => ({
       id: node.id,
@@ -376,13 +446,14 @@ function editorFingerprint(
   edges: EditorEdge[],
   zones: ArchitectureZoneInput[],
   riskContexts: EditorRiskContext[],
+  businessContext: ArchitectureBusinessContextInput,
   title: string,
   changeNote: string,
 ): string {
   return JSON.stringify({
     title: title.trim(),
     change_note: changeNote.trim(),
-    graph: buildGraph(nodes, edges, zones, riskContexts),
+    graph: buildGraph(nodes, edges, zones, riskContexts, businessContext),
   });
 }
 
@@ -441,6 +512,9 @@ export function OperationalArchitectureEditor({
   const [riskContexts, setRiskContexts] = useState<EditorRiskContext[]>(
     normalized.riskContexts,
   );
+  const [businessContext, setBusinessContext] = useState<ArchitectureBusinessContextInput>(
+    normalized.businessContext,
+  );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
     normalized.nodes[0]?.id ?? null,
   );
@@ -461,6 +535,7 @@ export function OperationalArchitectureEditor({
       normalized.edges,
       normalized.zones,
       normalized.riskContexts,
+      normalized.businessContext,
       selectedVersion?.title ?? `${systemName} – arkitektur`,
       '',
     ),
@@ -478,8 +553,17 @@ export function OperationalArchitectureEditor({
   riskContextsRef.current = riskContexts;
 
   const currentFingerprint = useMemo(
-    () => editorFingerprint(nodes, edges, zones, riskContexts, title, changeNote),
-    [changeNote, edges, nodes, riskContexts, title, zones],
+    () =>
+      editorFingerprint(
+        nodes,
+        edges,
+        zones,
+        riskContexts,
+        businessContext,
+        title,
+        changeNote,
+      ),
+    [businessContext, changeNote, edges, nodes, riskContexts, title, zones],
   );
   const dirty = currentFingerprint !== baselineFingerprint;
 
@@ -531,6 +615,7 @@ export function OperationalArchitectureEditor({
     setEdges(normalized.edges);
     setZones(normalized.zones);
     setRiskContexts(normalized.riskContexts);
+    setBusinessContext(normalized.businessContext);
     setSelectedNodeId(normalized.nodes[0]?.id ?? null);
     setSelectedEdgeId(null);
     setTitle(nextTitle);
@@ -543,6 +628,7 @@ export function OperationalArchitectureEditor({
         normalized.edges,
         normalized.zones,
         normalized.riskContexts,
+        normalized.businessContext,
         nextTitle,
         '',
       ),
@@ -839,7 +925,7 @@ export function OperationalArchitectureEditor({
   }
 
   async function saveVersion() {
-    const graph = buildGraph(nodes, edges, zones, riskContexts);
+    const graph = buildGraph(nodes, edges, zones, riskContexts, businessContext);
     setSaveError(null);
     try {
       await onSave({
@@ -849,7 +935,15 @@ export function OperationalArchitectureEditor({
         graph,
       });
       setBaselineFingerprint(
-        editorFingerprint(nodes, edges, zones, riskContexts, title, changeNote),
+        editorFingerprint(
+          nodes,
+          edges,
+          zones,
+          riskContexts,
+          businessContext,
+          title,
+          changeNote,
+        ),
       );
       setUndoStack([]);
       setRedoStack([]);
@@ -1000,6 +1094,40 @@ export function OperationalArchitectureEditor({
           ångra ändringarna innan du lämnar vyn.
         </div>
       )}
+
+
+
+<section className="op-business-context panel" aria-label="Verksamhetskontext">
+  <header className="op-section-heading">
+    <div>
+      <span className="section-kicker">CYBER RISK CONTEXT</span>
+      <h2>Koppla arkitekturen till verksamheten</h2>
+    </div>
+    <small>Kontexten versionshanteras med den manuella arkitekturmodellen och används i riskgrafen.</small>
+  </header>
+  <div className="op-business-context__grid">
+    <label><span>Affärsägare</span><input disabled={readOnly} value={businessContext.business_owner} onChange={(event) => setBusinessContext((current) => ({ ...current, business_owner: event.target.value }))} /></label>
+    <label><span>Verksamhetsförmågor, kommaseparerade</span><input disabled={readOnly} value={businessContext.capabilities.join(', ')} onChange={(event) => setBusinessContext((current) => ({ ...current, capabilities: parseCommaSeparated(event.target.value) }))} /></label>
+    <label><span>Processer, kommaseparerade</span><input disabled={readOnly} value={businessContext.processes.join(', ')} onChange={(event) => setBusinessContext((current) => ({ ...current, processes: parseCommaSeparated(event.target.value) }))} /></label>
+    <label><span>Datakategorier, kommaseparerade</span><input disabled={readOnly} value={businessContext.data_categories.join(', ')} onChange={(event) => setBusinessContext((current) => ({ ...current, data_categories: parseCommaSeparated(event.target.value) }))} /></label>
+    <label><span>Regelverk, kommaseparerade</span><input disabled={readOnly} value={businessContext.regulations.join(', ')} onChange={(event) => setBusinessContext((current) => ({ ...current, regulations: parseCommaSeparated(event.target.value) }))} /></label>
+    <label><span>RTO, timmar</span><input disabled={readOnly} min={0} step="0.5" type="number" value={businessContext.recovery_time_objective_hours ?? ''} onChange={(event) => setBusinessContext((current) => ({ ...current, recovery_time_objective_hours: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+    <label><span>RPO, timmar</span><input disabled={readOnly} min={0} step="0.5" type="number" value={businessContext.recovery_point_objective_hours ?? ''} onChange={(event) => setBusinessContext((current) => ({ ...current, recovery_point_objective_hours: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+  </div>
+  <div className="op-business-impact" role="group" aria-label="Konsekvensprofil">
+    {([
+      ['confidentiality', 'Konfidentialitet'],
+      ['integrity', 'Riktighet'],
+      ['availability', 'Tillgänglighet'],
+      ['financial', 'Finansiell'],
+      ['regulatory', 'Regulatorisk'],
+      ['reputation', 'Anseende'],
+      ['safety', 'Säkerhet för person'],
+    ] as const).map(([key, label]) => (
+      <label key={key}><span>{label}</span><select disabled={readOnly} value={businessContext.impact[key]} onChange={(event) => setBusinessContext((current) => ({ ...current, impact: { ...current.impact, [key]: Number(event.target.value) } }))}>{[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}/5</option>)}</select></label>
+    ))}
+  </div>
+</section>
 
       <div className="op-editor-shell">
         <aside className="op-editor-library">
