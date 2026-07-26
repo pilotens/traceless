@@ -42,6 +42,14 @@ jobs:
               start = text.index(start_marker)
               end = text.index(end_marker, start)
               text = text[:start] + text[end:]
+          text = text.replace(
+              '"  type ArchitectureEdgeInput,\\n  type ArchitectureGraphInput,\\n"',
+              '"  ArchitectureEdgeInput,\\n  ArchitectureGraphInput,\\n"',
+          )
+          text = text.replace(
+              '"  type ArchitectureBusinessContextInput,\\n  type ArchitectureEdgeInput,\\n  type ArchitectureGraphInput,\\n"',
+              '"  ArchitectureBusinessContextInput,\\n  ArchitectureEdgeInput,\\n  ArchitectureGraphInput,\\n"',
+          )
           path.write_text(text)
           PY
           set +e
