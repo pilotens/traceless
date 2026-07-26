@@ -50,6 +50,10 @@ jobs:
               '"  type ArchitectureBusinessContextInput,\\n  type ArchitectureEdgeInput,\\n  type ArchitectureGraphInput,\\n"',
               '"  ArchitectureBusinessContextInput,\\n  ArchitectureEdgeInput,\\n  ArchitectureGraphInput,\\n"',
           )
+          text = text.replace(
+              'getOverview: vi.fn(async () => overview)',
+              'getOverview: vi.fn(async (_systemId: string) => overview)',
+          )
           path.write_text(text)
           PY
           set +e
