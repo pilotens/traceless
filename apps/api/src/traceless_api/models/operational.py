@@ -173,9 +173,7 @@ class ArchitectureNodeInput(StrictModel):
         "other",
     ]
     position: ArchitecturePosition
-    zone_id: str | None = Field(
-        default=None, max_length=120, pattern=r"^[A-Za-z0-9:._/-]+$"
-    )
+    zone_id: str | None = Field(default=None, max_length=120, pattern=r"^[A-Za-z0-9:._/-]+$")
     properties: dict[str, Any] = Field(default_factory=dict)
     provenance: Literal["manual", "observed", "imported"] = "manual"
 
@@ -248,9 +246,7 @@ class ArchitectureGraphInput(StrictModel):
             raise ValueError("architecture zone ids must be unique")
         if len(edge_ids) != len(set(edge_ids)):
             raise ValueError("architecture edge ids must be unique")
-        context_keys = [
-            (context.asset_id, context.service_id) for context in self.risk_contexts
-        ]
+        context_keys = [(context.asset_id, context.service_id) for context in self.risk_contexts]
         if len(context_keys) != len(set(context_keys)):
             raise ValueError("architecture risk contexts must be unique per asset/service")
         known_nodes = set(node_ids)
@@ -275,9 +271,7 @@ class ArchitectureVersionCreate(StrictModel):
     graph: ArchitectureGraphInput
 
 
-VulnerabilityProvider = Literal[
-    "nessus", "qualys", "greenbone", "rapid7", "defender_vm", "generic"
-]
+VulnerabilityProvider = Literal["nessus", "qualys", "greenbone", "rapid7", "defender_vm", "generic"]
 VulnerabilitySeverity = Literal["info", "low", "medium", "high", "critical"]
 
 
@@ -351,9 +345,7 @@ class VulnerabilityScanImportCreate(StrictModel):
     scan_started_at: AwareDatetime | None = None
     scan_completed_at: AwareDatetime | None = None
     report_metadata: dict[str, Any] = Field(default_factory=dict)
-    observations: list[VulnerabilityObservationInput] = Field(
-        max_length=50_000
-    )
+    observations: list[VulnerabilityObservationInput] = Field(max_length=50_000)
 
     @model_validator(mode="after")
     def report_is_chronological_and_bounded(self) -> "VulnerabilityScanImportCreate":
@@ -367,12 +359,12 @@ class VulnerabilityScanImportCreate(StrictModel):
             raise ValueError("report_metadata exceeds the 64 KB normalized limit")
         complete_snapshot = self.report_metadata.get("snapshot_complete") is True
         series_id = self.report_metadata.get("snapshot_series_id")
-        if complete_snapshot and self.provider == "nessus" and not (
-            isinstance(series_id, str) and 1 <= len(series_id.strip()) <= 500
+        if (
+            complete_snapshot
+            and self.provider == "nessus"
+            and not (isinstance(series_id, str) and 1 <= len(series_id.strip()) <= 500)
         ):
-            raise ValueError(
-                "a complete Nessus snapshot requires a stable snapshot_series_id"
-            )
+            raise ValueError("a complete Nessus snapshot requires a stable snapshot_series_id")
         if not self.observations and self.provider != "nessus":
             raise ValueError(
                 "an empty import is valid only for a Nessus report; absence resolution "
@@ -637,9 +629,30 @@ class AssetSourceSnapshotDetail(AssetSourceSnapshotSummary):
     warning: str = "Source observations are unreviewed and do not modify an approved architecture."
 
 
+ReportSection = Literal[
+    "executive_summary",
+    "scope_methodology",
+    "architecture",
+    "assets_services",
+    "findings",
+    "threats",
+    "risks",
+    "vulnerability_observations",
+    "limitations",
+]
+
+
 class ReportCreate(StrictModel):
     format: Literal["pdf", "json", "csv"] = "pdf"
     report_type: Literal["management", "technical", "risk_register"] = "management"
+    sections: list[ReportSection] | None = Field(default=None, min_length=1, max_length=9)
+
+    @field_validator("sections")
+    @classmethod
+    def sections_are_unique(cls, values: list[ReportSection] | None) -> list[ReportSection] | None:
+        if values is not None and len(values) != len(set(values)):
+            raise ValueError("report sections must be unique")
+        return values
 
 
 class ReportView(StrictModel):
@@ -648,9 +661,7 @@ class ReportView(StrictModel):
     format: Literal["pdf", "json", "csv"]
     report_type: Literal["management", "technical", "risk_register"]
     sha256: str
-    distribution_tlp: Literal[
-        "TLP:CLEAR", "TLP:GREEN", "TLP:AMBER", "TLP:AMBER+STRICT", "TLP:RED"
-    ]
+    distribution_tlp: Literal["TLP:CLEAR", "TLP:GREEN", "TLP:AMBER", "TLP:AMBER+STRICT", "TLP:RED"]
     export_status: Literal["available", "withdrawn"]
     withdrawal_reason: str | None = None
     created_at: AwareDatetime

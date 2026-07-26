@@ -6,6 +6,16 @@ export type ScanProfile = 'discovery' | 'service_inventory';
 export type ScanStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 export type ReportFormat = 'pdf' | 'json' | 'csv';
 export type ReportType = 'management' | 'technical' | 'risk_register';
+export type ReportSection =
+  | 'executive_summary'
+  | 'scope_methodology'
+  | 'architecture'
+  | 'assets_services'
+  | 'findings'
+  | 'threats'
+  | 'risks'
+  | 'vulnerability_observations'
+  | 'limitations';
 export type BackgroundJobType =
   | 'normalized_vulnerability_import'
   | 'report_generation'
@@ -902,12 +912,18 @@ export interface OperationalApi {
   syncNetBox(systemId: string): Promise<AssetSourceSnapshot>;
   listAssetSourceSnapshots(systemId: string): Promise<AssetSourceSnapshot[]>;
   listReports(systemId: string): Promise<Report[]>;
-  createReport(systemId: string, format: ReportFormat, reportType: ReportType): Promise<Report>;
+  createReport(
+    systemId: string,
+    format: ReportFormat,
+    reportType: ReportType,
+    sections?: ReportSection[],
+  ): Promise<Report>;
   enqueueReport(
     systemId: string,
     format: ReportFormat,
     reportType: ReportType,
     idempotencyKey: string,
+    sections?: ReportSection[],
   ): Promise<BackgroundJobEnqueueResult>;
   listBackgroundJobs(options?: BackgroundJobListOptions): Promise<BackgroundJobList>;
   getBackgroundJob(jobId: string): Promise<BackgroundJob>;
@@ -1214,15 +1230,15 @@ export function createOperationalApi(options: ApiOptions = {}): OperationalApi {
     listAssetSourceSnapshots: (systemId) =>
       json<AssetSourceSnapshot[]>(`${systemPath(systemId)}/asset-sources/snapshots`),
     listReports: (systemId) => json<Report[]>(`${systemPath(systemId)}/reports`),
-    createReport: (systemId, format, reportType) =>
+    createReport: (systemId, format, reportType, sections) =>
       json<Report>(`${systemPath(systemId)}/reports`, {
         method: 'POST',
-        body: JSON.stringify({ format, report_type: reportType }),
+        body: JSON.stringify({ format, report_type: reportType, sections }),
       }),
-    enqueueReport: (systemId, format, reportType, idempotencyKey) =>
+    enqueueReport: (systemId, format, reportType, idempotencyKey, sections) =>
       json<BackgroundJobEnqueueResult>(`${systemPath(systemId)}/reports/async`, {
         method: 'POST',
-        body: JSON.stringify({ format, report_type: reportType }),
+        body: JSON.stringify({ format, report_type: reportType, sections }),
         headers: { 'Idempotency-Key': idempotencyKey },
       }),
     listBackgroundJobs: (options = {}) => {

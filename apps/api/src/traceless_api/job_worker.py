@@ -38,7 +38,11 @@ from traceless_api.models.operational import ReportCreate, VulnerabilityScanImpo
 from traceless_api.services.background_jobs import job_payload_sha256
 from traceless_api.services.intelligence_hub import IntelligenceHubService
 from traceless_api.services.operational_repository import OperationalRepository
-from traceless_api.services.reporting import build_report_snapshot, render_report
+from traceless_api.services.reporting import (
+    build_report_snapshot,
+    freeze_report_configuration,
+    render_report,
+)
 
 
 class BackgroundJobCancelledError(RuntimeError):
@@ -71,9 +75,7 @@ class BackgroundJobLease:
     token: str
 
 
-JobExecutor = Callable[
-    [Session, BackgroundJobRow, OperationalRepository, str], JobExecutionResult
-]
+JobExecutor = Callable[[Session, BackgroundJobRow, OperationalRepository, str], JobExecutionResult]
 
 logger = logging.getLogger(__name__)
 
@@ -297,10 +299,7 @@ def _dispatch_background_job(
         statement = statement.where(
             BackgroundJobRow.cancel_requested_at.is_(None),
             or_(
-                (
-                    (BackgroundJobRow.status == "queued")
-                    & (BackgroundJobRow.available_at <= now)
-                ),
+                ((BackgroundJobRow.status == "queued") & (BackgroundJobRow.available_at <= now)),
                 (
                     (BackgroundJobRow.status == "running")
                     & BackgroundJobRow.lease_expires_at.is_not(None)
@@ -313,9 +312,7 @@ def _dispatch_background_job(
             BackgroundJobRow.requested_at,
             BackgroundJobRow.id,
         )
-    row = session.execute(
-        statement.with_for_update(skip_locked=True).limit(1)
-    ).one_or_none()
+    row = session.execute(statement.with_for_update(skip_locked=True).limit(1)).one_or_none()
     return None if row is None else (row.id, row.organization_id)
 
 
@@ -438,10 +435,14 @@ def _execute_report(
             "invalid_job_payload", "The report generation job payload is invalid"
         ) from error
     snapshot = build_report_snapshot(repository, job.system_id)
+    selected_sections = freeze_report_configuration(
+        snapshot, report_type=request.report_type, sections=request.sections
+    )
     content = render_report(
         snapshot,
         format=request.format,
         report_type=request.report_type,
+        sections=selected_sections,
     )
     digest = hashlib.sha256(content).hexdigest()
     report = repository.save_report(

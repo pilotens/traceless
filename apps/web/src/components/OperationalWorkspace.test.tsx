@@ -1563,6 +1563,7 @@ describe('OperationalWorkspace', () => {
         'pdf',
         'management',
         expect.stringMatching(/^report-/),
+        ['executive_summary', 'risks', 'limitations'],
       ),
     );
     await user.click(await screen.findByRole('button', { name: /Ladda ned/ }));

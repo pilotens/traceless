@@ -30,6 +30,7 @@ import {
   type Project,
   type Report,
   type ReportFormat,
+  type ReportSection,
   type ReportType,
   type ScanAuthorization,
   type ScanJob,
@@ -71,6 +72,22 @@ const MAX_XML_BYTES = 16 * 1024 * 1024;
 const MAX_VULNERABILITY_REPORT_BYTES = 32 * 1024 * 1024;
 const COLLECTION_PAGE_SIZE = 50;
 const BACKGROUND_JOB_POLL_MS = 2_000;
+const REPORT_SECTION_OPTIONS: Array<{ id: ReportSection; label: string; description: string }> = [
+  { id: 'executive_summary', label: 'Sammanfattning', description: 'Nyckeltal och övergripande slutsats.' },
+  { id: 'scope_methodology', label: 'Scope och metod', description: 'Omfattning, datakällor och bedömningsmetod.' },
+  { id: 'architecture', label: 'Arkitektur', description: 'Senaste frysta arkitektur- och skanningskontext.' },
+  { id: 'assets_services', label: 'Tillgångar och tjänster', description: 'Observerade systemkomponenter och exponerade tjänster.' },
+  { id: 'findings', label: 'Fynd', description: 'Tekniska fynd med status, CVE, CVSS och evidens.' },
+  { id: 'threats', label: 'Hotbild och ATT&CK', description: 'Matchad hotinformation och MITRE ATT&CK.' },
+  { id: 'risks', label: 'Risker', description: 'Prioriterade och historiska riskbedömningar.' },
+  { id: 'vulnerability_observations', label: 'Scannerobservationer', description: 'Importerade leverantörsobservationer och rådata.' },
+  { id: 'limitations', label: 'Begränsningar', description: 'Osäkerheter, antaganden och valideringsbehov.' },
+];
+const REPORT_SECTION_DEFAULTS: Record<ReportType, ReportSection[]> = {
+  management: ['executive_summary', 'risks', 'limitations'],
+  technical: REPORT_SECTION_OPTIONS.map((section) => section.id).filter((id) => id !== 'executive_summary'),
+  risk_register: ['executive_summary', 'scope_methodology', 'risks'],
+};
 
 function emptyPage<T>(): Page<T> {
   return { items: [], total: 0, limit: COLLECTION_PAGE_SIZE, offset: 0, has_more: false };
@@ -166,6 +183,9 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
   );
   const [reportFormat, setReportFormat] = useState<ReportFormat>('pdf');
   const [reportType, setReportType] = useState<ReportType>('management');
+  const [reportSections, setReportSections] = useState<ReportSection[]>(
+    REPORT_SECTION_DEFAULTS.management,
+  );
   const [intelQuery, setIntelQuery] = useState('');
   const [intelSourceKind, setIntelSourceKind] = useState<IntelSourceKind | ''>('');
   const [appliedIntelFilters, setAppliedIntelFilters] = useState<{
@@ -1174,6 +1194,7 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
         reportFormat,
         reportType,
         `report-${crypto.randomUUID()}`,
+        reportSections,
       );
       if (!isSystemContextCurrent(context)) return;
       const completedImmediately = await registerEnqueuedJob(result.job, context);
@@ -1471,9 +1492,24 @@ export function OperationalWorkspace({ api = operationalApi }: OperationalWorksp
             {canAnalyze && <article className="panel op-control-card">
               <header><span className="section-kicker">STEG 7</span><h2>Skapa fryst rapportunderlag</h2></header>
               <form className="op-report-form" onSubmit={handleCreateReport}>
-                <label><span>Rapporttyp</span><select value={reportType} onChange={(event) => setReportType(event.target.value as ReportType)}><option value="management">Ledning</option><option value="technical">Teknisk</option><option value="risk_register">Riskregister</option></select></label>
+                <label><span>Rapporttyp</span><select value={reportType} onChange={(event) => { const next = event.target.value as ReportType; setReportType(next); setReportSections(REPORT_SECTION_DEFAULTS[next]); }}><option value="management">Ledning</option><option value="technical">Teknisk</option><option value="risk_register">Riskregister</option></select></label>
                 <label><span>Format</span><select value={reportFormat} onChange={(event) => setReportFormat(event.target.value as ReportFormat)}><option value="pdf">PDF</option><option value="json">JSON</option><option value="csv">CSV</option></select></label>
-                <button className="primary-button" disabled={busyAction !== null}><Icon name="report" size={16} /> Köa rapport</button>
+                <fieldset className="op-report-builder">
+                  <legend>Välj vad som ska ingå</legend>
+                  <div className="op-report-builder__toolbar">
+                    <button type="button" className="secondary-button" onClick={() => setReportSections(REPORT_SECTION_OPTIONS.map((item) => item.id))}>Markera alla</button>
+                    <button type="button" className="secondary-button" onClick={() => setReportSections(REPORT_SECTION_DEFAULTS[reportType])}>Återställ profil</button>
+                    <button type="button" className="secondary-button" onClick={() => setReportSections([])}>Avmarkera alla</button>
+                  </div>
+                  <div className="op-report-builder__grid">
+                    {REPORT_SECTION_OPTIONS.map((section) => {
+                      const checked = reportSections.includes(section.id);
+                      return <label key={section.id} className={checked ? 'is-selected' : ''}><input type="checkbox" checked={checked} onChange={() => setReportSections((current) => checked ? current.filter((id) => id !== section.id) : [...current, section.id])} /><span><strong>{section.label}</strong><small>{section.description}</small></span></label>;
+                    })}
+                  </div>
+                  <small>Omslag, systemidentitet, rapportdatum och TLP-klassificering ingår alltid.</small>
+                </fieldset>
+                <button aria-label="Köa rapport" className="primary-button" disabled={busyAction !== null || reportSections.length === 0}><Icon name="report" size={16} /> Köa rapport ({reportSections.length} delar)</button>
               </form>
               <p className="op-caveat">Rapporttyperna har separata innehållskontrakt. Varje rapport fryser aktuellt underlag och gör inte kandidater till bekräftade fakta.</p>
             </article>}

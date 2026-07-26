@@ -44,7 +44,58 @@ from traceless_api.services.operational_repository import (
 )
 
 REPORT_TYPES = {"management", "technical", "risk_register"}
+REPORT_SECTIONS = {
+    "executive_summary",
+    "scope_methodology",
+    "architecture",
+    "assets_services",
+    "findings",
+    "threats",
+    "risks",
+    "vulnerability_observations",
+    "limitations",
+}
+REPORT_SECTION_DEFAULTS = {
+    "management": ["executive_summary", "risks", "limitations"],
+    "technical": [
+        "scope_methodology",
+        "architecture",
+        "assets_services",
+        "findings",
+        "threats",
+        "risks",
+        "vulnerability_observations",
+        "limitations",
+    ],
+    "risk_register": ["executive_summary", "scope_methodology", "risks"],
+}
 _REPORT_ISOLATION_MARKER = "traceless_report_repeatable_read"
+
+
+def resolve_report_sections(report_type: str, sections: list[str] | None) -> list[str]:
+    if report_type not in REPORT_TYPES:
+        raise ValueError(f"Unsupported report type: {report_type}")
+    selected = list(REPORT_SECTION_DEFAULTS[report_type] if sections is None else sections)
+    if not selected:
+        raise ValueError("At least one report section must be selected")
+    unknown = set(selected) - REPORT_SECTIONS
+    if unknown:
+        raise ValueError(f"Unsupported report sections: {sorted(unknown)}")
+    if len(selected) != len(set(selected)):
+        raise ValueError("Report sections must be unique")
+    return selected
+
+
+def freeze_report_configuration(
+    snapshot: dict[str, Any], *, report_type: str, sections: list[str] | None
+) -> list[str]:
+    selected = resolve_report_sections(report_type, sections)
+    snapshot["report_configuration"] = {
+        "report_type": report_type,
+        "sections": selected,
+        "mandatory_content": ["cover", "system_identity", "distribution_tlp", "created_at"],
+    }
+    return selected
 
 
 class ReportSnapshotConsistencyError(RuntimeError):
@@ -117,9 +168,7 @@ def _build_report_snapshot_once(
     repository: OperationalRepository, system_id: Any
 ) -> dict[str, Any]:
     repository.get_system(system_id)
-    IntelligenceHubService(repository).retire_nonprocessable_effects(
-        system_ids={system_id}
-    )
+    IntelligenceHubService(repository).retire_nonprocessable_effects(system_ids={system_id})
     system = OperationalSystemView.model_validate(repository.get_system(system_id))
     scan = repository.latest_completed_scan(system_id)
     assets = repository.list_assets_for_scan(system_id, scan.id) if scan is not None else []
@@ -136,15 +185,11 @@ def _build_report_snapshot_once(
     )
     current_risks = repository.list_current_risks(
         system_id,
-        finding_ids={
-            finding.id for finding in findings if finding.inventory_status == "current"
-        },
+        finding_ids={finding.id for finding in findings if finding.inventory_status == "current"},
         threat_ids={threat.id for threat in threats},
     )
     all_risks = repository.list_all_risks(system_id)
-    reported_threat_ids = {
-        risk.threat_id for risk in all_risks if risk.threat_id is not None
-    }
+    reported_threat_ids = {risk.threat_id for risk in all_risks if risk.threat_id is not None}
     reported_threats = (
         list(
             repository.session.scalars(
@@ -159,12 +204,8 @@ def _build_report_snapshot_once(
     )
     architecture = repository.latest_architecture(system_id)
     vulnerability_imports = repository.list_vulnerability_scan_imports(system_id)
-    vulnerability_observations = repository.list_vulnerability_observations(
-        system_id, limit=2_000
-    )
-    vulnerability_observation_total = sum(
-        item.observation_count for item in vulnerability_imports
-    )
+    vulnerability_observations = repository.list_vulnerability_observations(system_id, limit=2_000)
+    vulnerability_observation_total = sum(item.observation_count for item in vulnerability_imports)
     # Operational inventory is organization-confidential even when every CTI
     # input is CLEAR/GREEN. Imported markings may only make this stricter.
     source_markings: list[list[str]] = [[TLP_AMBER]]
@@ -175,9 +216,7 @@ def _build_report_snapshot_once(
             if isinstance(global_record_id, str):
                 global_intel_record_ids.add(global_record_id)
             markings = source.get("markings")
-            if isinstance(markings, list) and all(
-                isinstance(marking, str) for marking in markings
-            ):
+            if isinstance(markings, list) and all(isinstance(marking, str) for marking in markings):
                 source_markings.append(markings)
     reported_finding_ids = {finding.id for finding in findings}
     historical_evidence = (
@@ -194,25 +233,17 @@ def _build_report_snapshot_once(
         if isinstance(global_record_id, str):
             global_intel_record_ids.add(global_record_id)
         markings = evidence.payload.get("markings")
-        if isinstance(markings, list) and all(
-            isinstance(marking, str) for marking in markings
-        ):
+        if isinstance(markings, list) and all(isinstance(marking, str) for marking in markings):
             source_markings.append(markings)
     for threat in reported_threats:
         global_record_id = threat.provenance.get("global_intel_record_id")
         if isinstance(global_record_id, str):
             global_intel_record_ids.add(global_record_id)
         markings = threat.provenance.get("markings")
-        if isinstance(markings, list) and all(
-            isinstance(marking, str) for marking in markings
-        ):
+        if isinstance(markings, list) and all(isinstance(marking, str) for marking in markings):
             source_markings.append(markings)
-    current_global_rows = _current_global_intel_rows(
-        repository.session, global_intel_record_ids
-    )
-    source_markings.extend(
-        [row.distribution_tlp, *row.markings] for row in current_global_rows
-    )
+    current_global_rows = _current_global_intel_rows(repository.session, global_intel_record_ids)
+    source_markings.extend([row.distribution_tlp, *row.markings] for row in current_global_rows)
     distribution_tlp = most_restrictive_tlp(source_markings)
     if distribution_tlp == TLP_RED:
         raise OperationalConflictError(
@@ -229,18 +260,9 @@ def _build_report_snapshot_once(
             if architecture
             else None
         ),
-        "assets": [
-            AssetView.model_validate(row).model_dump(mode="json")
-            for row in assets
-        ],
-        "services": [
-            ServiceView.model_validate(row).model_dump(mode="json")
-            for row in services
-        ],
-        "findings": [
-            FindingView.model_validate(row).model_dump(mode="json")
-            for row in findings
-        ],
+        "assets": [AssetView.model_validate(row).model_dump(mode="json") for row in assets],
+        "services": [ServiceView.model_validate(row).model_dump(mode="json") for row in services],
+        "findings": [FindingView.model_validate(row).model_dump(mode="json") for row in findings],
         "vulnerability_scan_imports": [
             VulnerabilityScanImportView.model_validate(row).model_dump(mode="json")
             for row in vulnerability_imports
@@ -252,14 +274,8 @@ def _build_report_snapshot_once(
         "vulnerability_observations_truncated": (
             vulnerability_observation_total > len(vulnerability_observations)
         ),
-        "threats": [
-            ThreatView.model_validate(row).model_dump(mode="json")
-            for row in threats
-        ],
-        "risks": [
-            RiskView.model_validate(row).model_dump(mode="json")
-            for row in all_risks
-        ],
+        "threats": [ThreatView.model_validate(row).model_dump(mode="json") for row in threats],
+        "risks": [RiskView.model_validate(row).model_dump(mode="json") for row in all_risks],
         "current_risk_ids": sorted(str(row.id) for row in current_risks),
         "methodology": {
             "risk_scale": "likelihood 1-5 × impact 1-5",
@@ -286,9 +302,11 @@ def ensure_report_remains_exportable(
     """
 
     raw_ids = snapshot.get("global_intel_record_ids", [])
-    record_ids = {
-        value for value in raw_ids if isinstance(value, str)
-    } if isinstance(raw_ids, list) else set()
+    record_ids = (
+        {value for value in raw_ids if isinstance(value, str)}
+        if isinstance(raw_ids, list)
+        else set()
+    )
     record_ids.update(_legacy_snapshot_global_intel_ids(snapshot))
     current_rows = _current_global_intel_rows(repository.session, record_ids)
     snapshot_tlp = snapshot.get("distribution_tlp", TLP_AMBER)
@@ -346,9 +364,7 @@ def _current_global_intel_rows(
     if not parsed_ids:
         return []
     return list(
-        session.scalars(
-            select(GlobalIntelRecordRow).where(GlobalIntelRecordRow.id.in_(parsed_ids))
-        )
+        session.scalars(select(GlobalIntelRecordRow).where(GlobalIntelRecordRow.id.in_(parsed_ids)))
     )
 
 
@@ -384,12 +400,17 @@ def _snapshot_fingerprint(snapshot: dict[str, Any]) -> str:
     return hashlib.sha256(material).hexdigest()
 
 
-def render_report(snapshot: dict[str, Any], *, format: str, report_type: str) -> bytes:
-    """Render a report whose content genuinely follows the requested audience."""
+def render_report(
+    snapshot: dict[str, Any],
+    *,
+    format: str,
+    report_type: str,
+    sections: list[str] | None = None,
+) -> bytes:
+    """Render a report whose content follows both audience and selected sections."""
 
-    if report_type not in REPORT_TYPES:
-        raise ValueError(f"Unsupported report type: {report_type}")
-    payload = _report_payload(snapshot, report_type)
+    selected_sections = resolve_report_sections(report_type, sections)
+    payload = _report_payload(snapshot, report_type, selected_sections)
     if format == "json":
         return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
     if format == "csv":
@@ -399,7 +420,12 @@ def render_report(snapshot: dict[str, Any], *, format: str, report_type: str) ->
     raise ValueError(f"Unsupported report format: {format}")
 
 
-def _report_payload(snapshot: dict[str, Any], report_type: str) -> dict[str, Any]:
+def _report_payload(
+    snapshot: dict[str, Any],
+    report_type: str,
+    selected_sections: list[str] | None = None,
+) -> dict[str, Any]:
+    selected_sections = resolve_report_sections(report_type, selected_sections)
     current_risk_ids = set(
         snapshot.get("current_risk_ids", [risk["id"] for risk in snapshot["risks"]])
     )
@@ -415,8 +441,7 @@ def _report_payload(snapshot: dict[str, Any], report_type: str) -> dict[str, Any
         if risk["status"] == "open" and risk["id"] not in current_risk_ids
     ]
     presented_risks = [
-        _present_risk(risk, current_risk_ids=current_risk_ids)
-        for risk in snapshot["risks"]
+        _present_risk(risk, current_risk_ids=current_risk_ids) for risk in snapshot["risks"]
     ]
     active_findings = [
         finding
@@ -430,11 +455,13 @@ def _report_payload(snapshot: dict[str, Any], report_type: str) -> dict[str, Any
         "distribution_tlp": snapshot.get("distribution_tlp", "TLP:AMBER"),
         "system": snapshot["system"],
         "methodology": snapshot["methodology"],
+        "selected_sections": selected_sections,
     }
+    selected = set(selected_sections)
     if report_type == "management":
-        return {
-            **common,
-            "summary": {
+        payload: dict[str, Any] = dict(common)
+        if "executive_summary" in selected:
+            payload["summary"] = {
                 "assets": len(snapshot["assets"]),
                 "services": len(snapshot["services"]),
                 "active_findings": len(active_findings),
@@ -442,42 +469,85 @@ def _report_payload(snapshot: dict[str, Any], report_type: str) -> dict[str, Any
                 "open_risks": len(open_risks),
                 "closed_risks": len(closed_risks),
                 "retired_risks": len(retired_open_risks),
-                "critical_open_risks": sum(
-                    risk["level"] == "critical" for risk in open_risks
-                ),
-            },
-            "prioritized_open_risks": _sort_risks(open_risks)[:25],
-            "limitations": [
+                "critical_open_risks": sum(risk["level"] == "critical" for risk in open_risks),
+            }
+        if "risks" in selected:
+            payload["prioritized_open_risks"] = _sort_risks(open_risks)[:25]
+        if "limitations" in selected:
+            payload["limitations"] = [
                 "Only current open risks are included in management priorities.",
                 "Scanner observations and correlation candidates require analyst review.",
-            ],
-        }
+            ]
+        if "scope_methodology" in selected:
+            payload["scope_methodology"] = snapshot["methodology"]
+        if "architecture" in selected:
+            payload["latest_architecture"] = snapshot["latest_architecture"]
+        if "assets_services" in selected:
+            payload["assets"] = snapshot["assets"]
+            payload["services"] = snapshot["services"]
+        if "findings" in selected:
+            payload["findings"] = snapshot["findings"]
+        if "threats" in selected:
+            payload["threats"] = snapshot["threats"]
+        if "vulnerability_observations" in selected:
+            payload["vulnerability_observations"] = snapshot["vulnerability_observations"]
+        return payload
     if report_type == "risk_register":
-        return {
-            **common,
-            "summary": {
+        payload = dict(common)
+        if "executive_summary" in selected:
+            payload["summary"] = {
                 "open": len(open_risks),
                 "closed": len(closed_risks),
                 "retired": len(retired_open_risks),
                 "total": len(snapshot["risks"]),
-            },
-            "risks": _sort_risks(presented_risks),
-        }
-    return {
-        **common,
-        "latest_scan": snapshot["latest_scan"],
-        "latest_architecture": snapshot["latest_architecture"],
-        "assets": snapshot["assets"],
-        "services": snapshot["services"],
-        "findings": snapshot["findings"],
-        "threats": snapshot["threats"],
-        "risks": _sort_risks(presented_risks),
-        "vulnerability_scan_imports": snapshot["vulnerability_scan_imports"],
-        "vulnerability_observations": snapshot["vulnerability_observations"],
-        "vulnerability_observations_truncated": snapshot[
-            "vulnerability_observations_truncated"
-        ],
+            }
+        if "scope_methodology" in selected:
+            payload["scope_methodology"] = snapshot["methodology"]
+        if "risks" in selected:
+            payload["risks"] = _sort_risks(presented_risks)
+        if "limitations" in selected:
+            payload["limitations"] = [
+                "Risk status reflects the frozen report snapshot.",
+                "Retired risks remain available for audit history.",
+            ]
+        return payload
+    payload = dict(common)
+    section_values = {
+        "scope_methodology": {"scope_methodology": snapshot["methodology"]},
+        "architecture": {
+            "latest_scan": snapshot["latest_scan"],
+            "latest_architecture": snapshot["latest_architecture"],
+        },
+        "assets_services": {"assets": snapshot["assets"], "services": snapshot["services"]},
+        "findings": {"findings": snapshot["findings"]},
+        "threats": {"threats": snapshot["threats"]},
+        "risks": {"risks": _sort_risks(presented_risks)},
+        "vulnerability_observations": {
+            "vulnerability_scan_imports": snapshot["vulnerability_scan_imports"],
+            "vulnerability_observations": snapshot["vulnerability_observations"],
+            "vulnerability_observations_truncated": snapshot[
+                "vulnerability_observations_truncated"
+            ],
+        },
+        "limitations": {
+            "limitations": [
+                "Observed products and correlation candidates require analyst validation.",
+                "The report reflects a frozen point-in-time snapshot.",
+            ]
+        },
+        "executive_summary": {
+            "summary": {
+                "assets": len(snapshot["assets"]),
+                "services": len(snapshot["services"]),
+                "findings": len(snapshot["findings"]),
+                "threats": len(snapshot["threats"]),
+                "risks": len(snapshot["risks"]),
+            }
+        },
     }
+    for section in selected_sections:
+        payload.update(section_values.get(section, {}))
+    return payload
 
 
 def _present_risk(
@@ -638,11 +708,16 @@ def _render_pdf(payload: dict[str, Any], *, report_type: str) -> bytes:
         Paragraph(titles[report_type], styles["Title"]),
         Paragraph(escape(payload["distribution_tlp"]), styles["Heading3"]),
         Paragraph(escape(payload["system"]["name"]), styles["Heading2"]),
-        Paragraph(
-            escape(f"Kritikalitet: {payload['system']['criticality']}"), styles["BodyText"]
-        ),
+        Paragraph(escape(f"Kritikalitet: {payload['system']['criticality']}"), styles["BodyText"]),
         Spacer(1, 6 * mm),
     ]
+    story.append(
+        Paragraph(
+            escape("Valda delar: " + ", ".join(payload["selected_sections"])),
+            styles["TracelessSmall"],
+        )
+    )
+    story.append(Spacer(1, 4 * mm))
     if report_type == "management":
         _append_management_pdf(story, styles, payload)
     elif report_type == "technical":
@@ -664,71 +739,200 @@ def _append_management_pdf(story: list[Any], styles: Any, payload: dict[str, Any
         "retired_risks": "Inaktiva historiska risker",
         "critical_open_risks": "Kritiska öppna risker",
     }
-    summary = [[labels[key], value] for key, value in payload["summary"].items()]
-    story.extend([Paragraph("Sammanfattning", styles["Heading2"]), _styled_table(summary)])
-    story.extend([Spacer(1, 5 * mm), Paragraph("Prioriterade öppna risker", styles["Heading2"])])
-    _append_risk_table(story, styles, payload["prioritized_open_risks"])
-    story.extend(
-        [
-            Spacer(1, 5 * mm),
-            Paragraph("Beslutsunderlagets begränsningar", styles["Heading2"]),
-            Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"]),
-        ]
-    )
+    if "summary" in payload:
+        summary = [[labels[key], value] for key, value in payload["summary"].items()]
+        story.extend([Paragraph("Sammanfattning", styles["Heading2"]), _styled_table(summary)])
+    if "prioritized_open_risks" in payload:
+        story.extend(
+            [Spacer(1, 5 * mm), Paragraph("Prioriterade öppna risker", styles["Heading2"])]
+        )
+        _append_risk_table(story, styles, payload["prioritized_open_risks"])
+    if "scope_methodology" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Scope och metod", styles["Heading2"]),
+                Paragraph(
+                    escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)),
+                    styles["BodyText"],
+                ),
+            ]
+        )
+    if "limitations" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Beslutsunderlagets begränsningar", styles["Heading2"]),
+                Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"]),
+            ]
+        )
 
 
 def _append_technical_pdf(story: list[Any], styles: Any, payload: dict[str, Any]) -> None:
-    summary = [
-        ["Tillgångar", len(payload["assets"])],
-        ["Tjänster", len(payload["services"])],
-        ["Fynd", len(payload["findings"])],
-        ["Hot", len(payload["threats"])],
-        ["Risker", len(payload["risks"])],
-        ["Leverantörsobservationer", len(payload["vulnerability_observations"])],
-    ]
-    story.extend([Paragraph("Teknisk omfattning", styles["Heading2"]), _styled_table(summary)])
-    story.extend([Spacer(1, 5 * mm), Paragraph("Fynd", styles["Heading2"])])
-    findings = payload["findings"]
-    if findings:
-        rows: list[list[Any]] = [["Fynd", "Typ", "CVE", "Status", "CVSS"]]
-        for finding in findings:
-            rows.append(
-                [
-                    Paragraph(escape(finding["title"]), styles["TracelessSmall"]),
-                    finding["finding_type"],
-                    finding["cve_id"] or "–",
-                    finding["lifecycle_status"],
-                    finding["cvss_score"] if finding["cvss_score"] is not None else "–",
-                ]
-            )
-        story.append(
-            _styled_table(
-                rows,
-                header=True,
-                widths=[75 * mm, 25 * mm, 29 * mm, 24 * mm, 14 * mm],
-            )
+    if "summary" in payload:
+        story.extend(
+            [
+                Paragraph("Sammanfattning", styles["Heading2"]),
+                _styled_table([[key, value] for key, value in payload["summary"].items()]),
+            ]
         )
-    else:
-        story.append(Paragraph("Inga fynd finns i rapportens frysta underlag.", styles["BodyText"]))
-    if payload["vulnerability_observations_truncated"]:
-        story.append(
-            Paragraph(
-                "Råobservationslistan är avsiktligt begränsad; totalsiffror kommer från "
-                "importmanifesten.",
-                styles["BodyText"],
+    if "scope_methodology" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Scope och metod", styles["Heading2"]),
+                Paragraph(
+                    escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)),
+                    styles["BodyText"],
+                ),
+            ]
+        )
+    if "latest_architecture" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Arkitektur", styles["Heading2"]),
+                Paragraph(
+                    escape(json.dumps(payload["latest_architecture"], ensure_ascii=False)),
+                    styles["TracelessSmall"],
+                ),
+            ]
+        )
+    if "assets" in payload or "services" in payload:
+        summary = [
+            ["Tillgångar", len(payload.get("assets", []))],
+            ["Tjänster", len(payload.get("services", []))],
+        ]
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Tillgångar och tjänster", styles["Heading2"]),
+                _styled_table(summary),
+            ]
+        )
+    if "findings" in payload:
+        story.extend([Spacer(1, 5 * mm), Paragraph("Fynd", styles["Heading2"])])
+        findings = payload["findings"]
+        if findings:
+            rows: list[list[Any]] = [["Fynd", "Typ", "CVE", "Status", "CVSS"]]
+            for finding in findings:
+                rows.append(
+                    [
+                        Paragraph(escape(finding["title"]), styles["TracelessSmall"]),
+                        finding["finding_type"],
+                        finding["cve_id"] or "–",
+                        finding["lifecycle_status"],
+                        finding["cvss_score"] if finding["cvss_score"] is not None else "–",
+                    ]
+                )
+            story.append(
+                _styled_table(
+                    rows, header=True, widths=[75 * mm, 25 * mm, 29 * mm, 24 * mm, 14 * mm]
+                )
             )
+        else:
+            story.append(
+                Paragraph("Inga fynd finns i rapportens frysta underlag.", styles["BodyText"])
+            )
+    if "threats" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Hotbild", styles["Heading2"]),
+                _styled_table(
+                    [["Hot", "Allvar", "ATT&CK"]]
+                    + [
+                        [
+                            Paragraph(
+                                escape(
+                                    str(
+                                        item.get("title")
+                                        or item.get("name")
+                                        or item.get("id")
+                                        or "Okänt hot"
+                                    )
+                                ),
+                                styles["TracelessSmall"],
+                            ),
+                            item.get("severity", "unknown"),
+                            ", ".join(item.get("attack_patterns", [])) or "–",
+                        ]
+                        for item in payload["threats"]
+                    ],
+                    header=True,
+                    widths=[95 * mm, 25 * mm, 47 * mm],
+                ),
+            ]
+        )
+    if "risks" in payload:
+        story.extend([Spacer(1, 5 * mm), Paragraph("Risker", styles["Heading2"])])
+        _append_risk_table(story, styles, payload["risks"], include_status=True)
+    if "vulnerability_observations" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Scannerobservationer", styles["Heading2"]),
+                Paragraph(
+                    escape(
+                        
+                            f"{len(payload['vulnerability_observations'])} observationer "
+                            "ingår i det frysta underlaget."
+                        
+                    ),
+                    styles["BodyText"],
+                ),
+            ]
+        )
+        if payload.get("vulnerability_observations_truncated"):
+            story.append(
+                Paragraph(
+                    (
+                        "Råobservationslistan är avsiktligt begränsad; "
+                        "totalsiffror kommer från importmanifesten."
+                    ),
+                    styles["BodyText"],
+                )
+            )
+    if "limitations" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Begränsningar", styles["Heading2"]),
+                Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"]),
+            ]
         )
 
 
 def _append_risk_register_pdf(story: list[Any], styles: Any, payload: dict[str, Any]) -> None:
-    summary = [
-        ["Öppna", payload["summary"]["open"]],
-        ["Stängda", payload["summary"]["closed"]],
-        ["Totalt", payload["summary"]["total"]],
-    ]
-    story.extend([Paragraph("Status", styles["Heading2"]), _styled_table(summary)])
-    story.extend([Spacer(1, 5 * mm), Paragraph("Risker", styles["Heading2"])])
-    _append_risk_table(story, styles, payload["risks"], include_status=True)
+    if "summary" in payload:
+        summary = [
+            ["Öppna", payload["summary"]["open"]],
+            ["Stängda", payload["summary"]["closed"]],
+            ["Totalt", payload["summary"]["total"]],
+        ]
+        story.extend([Paragraph("Status", styles["Heading2"]), _styled_table(summary)])
+    if "scope_methodology" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Scope och metod", styles["Heading2"]),
+                Paragraph(
+                    escape(json.dumps(payload["scope_methodology"], ensure_ascii=False)),
+                    styles["BodyText"],
+                ),
+            ]
+        )
+    if "risks" in payload:
+        story.extend([Spacer(1, 5 * mm), Paragraph("Risker", styles["Heading2"])])
+        _append_risk_table(story, styles, payload["risks"], include_status=True)
+    if "limitations" in payload:
+        story.extend(
+            [
+                Spacer(1, 5 * mm),
+                Paragraph("Begränsningar", styles["Heading2"]),
+                Paragraph(escape(" ".join(payload["limitations"])), styles["BodyText"]),
+            ]
+        )
 
 
 def _append_risk_table(

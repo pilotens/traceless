@@ -4316,6 +4316,33 @@
             ],
             "title": "Report Type",
             "type": "string"
+          },
+          "sections": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "executive_summary",
+                    "scope_methodology",
+                    "architecture",
+                    "assets_services",
+                    "findings",
+                    "threats",
+                    "risks",
+                    "vulnerability_observations",
+                    "limitations"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 9,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sections"
           }
         },
         "title": "ReportCreate",

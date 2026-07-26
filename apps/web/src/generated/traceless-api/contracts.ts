@@ -2102,6 +2102,20 @@ export interface ReportCreate {
    * @default "management"
    */
   report_type?: "management" | "technical" | "risk_register";
+  /** Sections */
+  sections?:
+    | (
+        | "executive_summary"
+        | "scope_methodology"
+        | "architecture"
+        | "assets_services"
+        | "findings"
+        | "threats"
+        | "risks"
+        | "vulnerability_observations"
+        | "limitations"
+      )[]
+    | null;
 }
 
 /** ReportView */

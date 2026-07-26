@@ -18,6 +18,7 @@ from traceless_api.services.operational_repository import OperationalConflictErr
 from traceless_api.services.reporting import (
     build_report_snapshot,
     ensure_report_remains_exportable,
+    freeze_report_configuration,
     prepare_report_transaction,
     render_report,
 )
@@ -67,7 +68,15 @@ def create_report(
             ),
         )
     snapshot = build_report_snapshot(repository, system_id)
-    content = render_report(snapshot, format=payload.format, report_type=payload.report_type)
+    selected_sections = freeze_report_configuration(
+        snapshot, report_type=payload.report_type, sections=payload.sections
+    )
+    content = render_report(
+        snapshot,
+        format=payload.format,
+        report_type=payload.report_type,
+        sections=selected_sections,
+    )
     row = repository.save_report(
         system_id=system_id,
         report_type=payload.report_type,
@@ -115,9 +124,7 @@ def download_report(report_id: UUID, repository: OperationalRepositoryDependency
     )
 
 
-def _report_view(
-    repository: OperationalRepositoryDependency, row: ReportRow
-) -> ReportView:
+def _report_view(repository: OperationalRepositoryDependency, row: ReportRow) -> ReportView:
     withdrawal_reason: str | None = None
     try:
         ensure_report_remains_exportable(repository, row.snapshot)

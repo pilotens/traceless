@@ -119,12 +119,8 @@ def test_retired_open_risk_is_not_presented_as_currently_open() -> None:
     snapshot = _snapshot()
     snapshot["current_risk_ids"] = []
 
-    register = json.loads(
-        render_report(snapshot, format="json", report_type="risk_register")
-    )
-    management = json.loads(
-        render_report(snapshot, format="json", report_type="management")
-    )
+    register = json.loads(render_report(snapshot, format="json", report_type="risk_register"))
+    management = json.loads(render_report(snapshot, format="json", report_type="management"))
 
     assert register["summary"] == {"closed": 1, "open": 0, "retired": 1, "total": 2}
     retired = next(risk for risk in register["risks"] if risk["id"] == "risk-open")
@@ -137,12 +133,8 @@ def test_retired_open_risk_is_not_presented_as_currently_open() -> None:
 
 def test_each_csv_report_has_a_distinct_schema_and_neutralizes_formulas() -> None:
     snapshot = _snapshot()
-    management = render_report(snapshot, format="csv", report_type="management").decode(
-        "utf-8-sig"
-    )
-    technical = render_report(snapshot, format="csv", report_type="technical").decode(
-        "utf-8-sig"
-    )
+    management = render_report(snapshot, format="csv", report_type="management").decode("utf-8-sig")
+    technical = render_report(snapshot, format="csv", report_type="technical").decode("utf-8-sig")
     register = render_report(snapshot, format="csv", report_type="risk_register").decode(
         "utf-8-sig"
     )
@@ -175,8 +167,7 @@ def test_pdf_tables_do_not_silently_truncate_findings_or_risks(
         for index in range(75)
     ]
     snapshot["risks"] = [
-        {**risk_template, "id": f"risk-{index}", "title": f"Risk {index}"}
-        for index in range(150)
+        {**risk_template, "id": f"risk-{index}", "title": f"Risk {index}"} for index in range(150)
     ]
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name="TracelessSmall", parent=styles["BodyText"], fontSize=7))
@@ -306,3 +297,42 @@ def test_started_postgres_worker_transaction_uses_fingerprints_without_isolation
     assert snapshot["generation"] == "after-heartbeat"
     assert snapshot["consistency"] == "verified-consecutive-fingerprints"
     session.connection.assert_not_called()
+
+
+def test_custom_report_sections_control_payload_and_are_frozen():
+    from traceless_api.services.reporting import freeze_report_configuration, render_report
+
+    snapshot = _snapshot()
+    selected = freeze_report_configuration(
+        snapshot,
+        report_type="technical",
+        sections=["executive_summary", "risks", "limitations"],
+    )
+    payload = json.loads(
+        render_report(
+            snapshot,
+            format="json",
+            report_type="technical",
+            sections=selected,
+        )
+    )
+    assert payload["selected_sections"] == ["executive_summary", "risks", "limitations"]
+    assert "summary" in payload
+    assert "risks" in payload
+    assert "limitations" in payload
+    assert "assets" not in payload
+    assert "findings" not in payload
+    assert snapshot["report_configuration"]["sections"] == selected
+
+
+def test_report_create_rejects_duplicate_sections():
+    from pydantic import ValidationError
+
+    from traceless_api.models.operational import ReportCreate
+
+    with pytest.raises(ValidationError):
+        ReportCreate(
+            format="pdf",
+            report_type="management",
+            sections=["risks", "risks"],
+        )
