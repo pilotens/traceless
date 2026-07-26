@@ -44,7 +44,20 @@ jobs:
               text = text[:start] + text[end:]
           path.write_text(text)
           PY
-          python scripts/implement_cyber_risk_graph.py
+          set +e
+          python scripts/implement_cyber_risk_graph.py > /tmp/cyber-risk-graph-apply.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/cyber-risk-graph-apply.log cyber-risk-graph-error.log
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add cyber-risk-graph-error.log
+            git commit -m 'Capture cyber risk graph implementation error'
+            git push --force-with-lease=refs/heads/agent/initial-platform:${{ github.event.pull_request.head.sha }} origin HEAD:agent/initial-platform
+            cat /tmp/cyber-risk-graph-apply.log
+            exit "$status"
+          fi
       - name: Format backend and update contracts
         working-directory: apps/api
         run: |
