@@ -40,26 +40,10 @@ jobs:
       - name: Test frontend
         working-directory: apps/web
         run: |
-          set +e
-          {
-            npm ci &&
-            npm run generate:api &&
-            npm run test -- --run &&
-            npm run build
-          } > /tmp/report-builder-frontend.log 2>&1
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            cp /tmp/report-builder-frontend.log ../../report-builder-frontend-error.log
-            cd ../..
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add report-builder-frontend-error.log
-            git commit -m 'Capture report builder frontend error'
-            git push origin HEAD:agent/initial-platform
-            cat /tmp/report-builder-frontend.log
-            exit "$status"
-          fi
+          npm ci
+          npm run generate:api
+          npm run test -- --run
+          npm run build
       - name: Test report backend
         working-directory: apps/api
         run: .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q
@@ -71,5 +55,4 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
           git commit -m 'Implement configurable report builder'
-          git pull --rebase origin agent/initial-platform
-          git push origin HEAD:agent/initial-platform
+          git push --force-with-lease=refs/heads/agent/initial-platform:${{ github.event.pull_request.head.sha }} origin HEAD:agent/initial-platform
