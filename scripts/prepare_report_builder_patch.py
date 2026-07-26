@@ -35,6 +35,15 @@ text = text.replace(
 
 text += r"""
 
+workspace_file = Path('apps/web/src/components/OperationalWorkspace.tsx')
+workspace_rendered = workspace_file.read_text()
+workspace_rendered = workspace_rendered.replace(
+    '<button className="primary-button" disabled={busyAction !== null || reportSections.length === 0}>',
+    '<button aria-label="Köa rapport" className="primary-button" disabled={busyAction !== null || reportSections.length === 0}>',
+    1,
+)
+workspace_file.write_text(workspace_rendered)
+
 reporting_file = Path('apps/api/src/traceless_api/services/reporting.py')
 reporting_text = reporting_file.read_text()
 reporting_text = reporting_text.replace(
@@ -94,4 +103,4 @@ replacement = '''\ndef test_custom_report_sections_control_payload_and_are_froze
 test_file.write_text(test_text[:start] + replacement + test_text[end:])
 """
 path.write_text(text)
-# final-trigger-2
+# final-trigger-3
