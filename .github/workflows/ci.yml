@@ -57,38 +57,37 @@ jobs:
           path.write_text(text)
           PY
           python scripts/implement_cyber_risk_graph.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/api/src/traceless_api/services/risk_graph.py')
+          text = path.read_text()
+          text = text.replace(
+              'for asset_id, asset_node_id in asset_nodes.items():',
+              'for _asset_id, asset_node_id in asset_nodes.items():',
+          )
+          text = text.replace(
+              'for raw_id, node_id in architecture_component_ids.items():',
+              'for _raw_id, node_id in architecture_component_ids.items():',
+          )
+          path.write_text(text)
+          PY
       - name: Format backend and update contracts
         working-directory: apps/api
         run: |
-          set +e
-          {
-            python -m pip install uv==0.11.28 &&
-            uv sync --locked --extra dev &&
-            .venv/bin/ruff format \
-              src/traceless_api/models/operational.py \
-              src/traceless_api/services/risk_graph.py \
-              src/traceless_api/api/routes/operational.py \
-              tests/test_risk_graph.py &&
-            .venv/bin/ruff check --fix \
-              src/traceless_api/models/operational.py \
-              src/traceless_api/services/risk_graph.py \
-              src/traceless_api/api/routes/operational.py \
-              tests/test_risk_graph.py &&
-            .venv/bin/python scripts/export_openapi.py ../web/openapi.json
-          } > /tmp/cyber-risk-graph-format.log 2>&1
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            cp /tmp/cyber-risk-graph-format.log ../../cyber-risk-graph-format-error.log
-            cd ../..
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add cyber-risk-graph-format-error.log
-            git commit -m 'Capture cyber risk graph format error'
-            git push --force-with-lease=refs/heads/agent/initial-platform:${{ github.event.pull_request.head.sha }} origin HEAD:agent/initial-platform
-            cat /tmp/cyber-risk-graph-format.log
-            exit "$status"
-          fi
+          python -m pip install uv==0.11.28
+          uv sync --locked --extra dev
+          .venv/bin/ruff format \
+            src/traceless_api/models/operational.py \
+            src/traceless_api/services/risk_graph.py \
+            src/traceless_api/api/routes/operational.py \
+            tests/test_risk_graph.py
+          .venv/bin/ruff check --fix \
+            src/traceless_api/models/operational.py \
+            src/traceless_api/services/risk_graph.py \
+            src/traceless_api/api/routes/operational.py \
+            tests/test_risk_graph.py
+          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
       - name: Test customer web
         working-directory: apps/web
         run: |
