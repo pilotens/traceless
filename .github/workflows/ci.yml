@@ -32,41 +32,41 @@ jobs:
       - name: Format backend and update OpenAPI
         working-directory: apps/api
         run: |
-          set +e
-          {
-            python -m pip install uv==0.11.28 &&
-            uv sync --locked --extra dev &&
-            .venv/bin/ruff format src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py &&
-            .venv/bin/ruff check --fix src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py &&
-            .venv/bin/python scripts/export_openapi.py ../web/openapi.json
-          } > /tmp/report-builder-format.log 2>&1
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            cp /tmp/report-builder-format.log ../../report-builder-format-error.log
-            cd ../..
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add report-builder-format-error.log
-            git commit -m 'Capture report builder format error'
-            git push origin HEAD:agent/initial-platform
-            cat /tmp/report-builder-format.log
-            exit "$status"
-          fi
+          python -m pip install uv==0.11.28
+          uv sync --locked --extra dev
+          .venv/bin/ruff format src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py
+          .venv/bin/ruff check --fix src/traceless_api/models/operational.py src/traceless_api/services/reporting.py src/traceless_api/api/routes/reports.py src/traceless_api/job_worker.py tests/test_reporting.py
+          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
       - name: Test frontend
         working-directory: apps/web
         run: |
-          npm ci
-          npm run generate:api
-          npm run test -- --run
-          npm run build
+          set +e
+          {
+            npm ci &&
+            npm run generate:api &&
+            npm run test -- --run &&
+            npm run build
+          } > /tmp/report-builder-frontend.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/report-builder-frontend.log ../../report-builder-frontend-error.log
+            cd ../..
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add report-builder-frontend-error.log
+            git commit -m 'Capture report builder frontend error'
+            git push origin HEAD:agent/initial-platform
+            cat /tmp/report-builder-frontend.log
+            exit "$status"
+          fi
       - name: Test report backend
         working-directory: apps/api
         run: .venv/bin/pytest tests/test_reporting.py tests/test_background_jobs.py -q
       - name: Commit implementation and restore CI
         run: |
           git show 92e20dbb4a3387a3fe8c85bf3ab1634d057303c9:.github/workflows/ci.yml > .github/workflows/ci.yml
-          rm -f .github/workflows/implement-report-builder.yml implementation-error.log report-builder-format-error.log scripts/prepare_report_builder_patch.py .report-builder-trigger .report-builder-trigger-2
+          rm -f .github/workflows/implement-report-builder.yml implementation-error.log report-builder-format-error.log report-builder-frontend-error.log scripts/prepare_report_builder_patch.py .report-builder-trigger .report-builder-trigger-2
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
