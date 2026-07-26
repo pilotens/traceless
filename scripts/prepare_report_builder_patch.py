@@ -44,6 +44,15 @@ workspace_rendered = workspace_rendered.replace(
 )
 workspace_file.write_text(workspace_rendered)
 
+workspace_test_file = Path('apps/web/src/components/OperationalWorkspace.test.tsx')
+workspace_test_text = workspace_test_file.read_text()
+workspace_test_text = workspace_test_text.replace(
+    "        expect.stringMatching(/^report-/),\n      ),",
+    "        expect.stringMatching(/^report-/),\n        ['executive_summary', 'risks', 'limitations'],\n      ),",
+    1,
+)
+workspace_test_file.write_text(workspace_test_text)
+
 reporting_file = Path('apps/api/src/traceless_api/services/reporting.py')
 reporting_text = reporting_file.read_text()
 reporting_text = reporting_text.replace(
@@ -103,4 +112,4 @@ replacement = '''\ndef test_custom_report_sections_control_payload_and_are_froze
 test_file.write_text(test_text[:start] + replacement + test_text[end:])
 """
 path.write_text(text)
-# final-trigger-3
+# final-trigger-4
