@@ -1,1 +1,1 @@
-Pattern not found in apps/web/src/components/OperationalArchitectureEditor.tsx: '  type ArchitectureEdgeInput,\n  type ArchitectureGraphInput,\n'
+Pattern not found in apps/web/src/components/OperationalWorkspace.test.tsx: '    getOverview: vi.fn(async () => overview),\n'
