@@ -54,6 +54,10 @@ jobs:
               'getOverview: vi.fn(async () => overview)',
               'getOverview: vi.fn(async (_systemId: string) => overview)',
           )
+          text = text.replace(
+              "expect(screen.getByRole('region', { name: 'CISO-läge' })).toBeInTheDocument();",
+              "expect(await screen.findByRole('region', { name: 'CISO-läge' })).toBeInTheDocument();",
+          )
           path.write_text(text)
           PY
           python scripts/implement_cyber_risk_graph.py
@@ -91,26 +95,10 @@ jobs:
       - name: Test customer web
         working-directory: apps/web
         run: |
-          set +e
-          {
-            npm ci &&
-            npm run generate:api &&
-            npm run test -- --run &&
-            npm run build
-          } > /tmp/cyber-risk-graph-web.log 2>&1
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            cp /tmp/cyber-risk-graph-web.log ../../cyber-risk-graph-web-error.log
-            cd ../..
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add cyber-risk-graph-web-error.log
-            git commit -m 'Capture cyber risk graph frontend error'
-            git push --force-with-lease=refs/heads/agent/initial-platform:${{ github.event.pull_request.head.sha }} origin HEAD:agent/initial-platform
-            cat /tmp/cyber-risk-graph-web.log
-            exit "$status"
-          fi
+          npm ci
+          npm run generate:api
+          npm run test -- --run
+          npm run build
       - name: Test backend risk graph
         working-directory: apps/api
         run: >-
