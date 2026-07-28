@@ -105,6 +105,7 @@ jobs:
             .venv/bin/alembic downgrade b1d8f6a3c720
             .venv/bin/alembic upgrade head
             .venv/bin/python scripts/export_openapi.py ../web/openapi.json
+            unset TRACELESS_DATABASE_URL TRACELESS_AUTO_CREATE_SCHEMA TRACELESS_ENVIRONMENT
             .venv/bin/pytest -q \
               tests/test_work_management.py \
               tests/test_operational_auth.py \
