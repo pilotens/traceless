@@ -1,0 +1,102 @@
+name: Materialize enterprise workflows
+
+on:
+  push:
+    branches: [agent/enterprise-workflows]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: enterprise-workflows-materialization
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/enterprise-workflows
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Apply enterprise implementation
+        run: python scripts/implement_enterprise_workflows.py
+
+      - name: Format, migrate and test API
+        working-directory: apps/api
+        env:
+          TRACELESS_ENVIRONMENT: test
+          TRACELESS_DATABASE_URL: sqlite+pysqlite:////tmp/traceless-enterprise.db
+          TRACELESS_AUTO_CREATE_SCHEMA: 'false'
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --locked --extra dev
+          .venv/bin/ruff format \
+            src/traceless_api/core/config.py \
+            src/traceless_api/db/work_management.py \
+            src/traceless_api/models/work_management.py \
+            src/traceless_api/integrations/work_management.py \
+            src/traceless_api/services/work_management.py \
+            src/traceless_api/api/routes/work_management.py \
+            src/traceless_api/api/router.py \
+            migrations/env.py \
+            migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py \
+            tests/test_work_management.py
+          .venv/bin/ruff check --fix \
+            src/traceless_api/core/config.py \
+            src/traceless_api/db/work_management.py \
+            src/traceless_api/models/work_management.py \
+            src/traceless_api/integrations/work_management.py \
+            src/traceless_api/services/work_management.py \
+            src/traceless_api/api/routes/work_management.py \
+            src/traceless_api/api/router.py \
+            migrations/env.py \
+            migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py \
+            tests/test_work_management.py
+          rm -f /tmp/traceless-enterprise.db
+          .venv/bin/alembic upgrade head
+          .venv/bin/alembic check
+          .venv/bin/alembic downgrade a9c4e2b7d610
+          .venv/bin/alembic upgrade head
+          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
+          .venv/bin/pytest -q \
+            tests/test_work_management.py \
+            tests/test_operational_auth.py \
+            tests/test_tenant_rbac.py
+
+      - name: Test and build customer web
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run generate:api
+          npm run test -- --run
+          npm run build
+
+      - name: Squash and publish product changes
+        env:
+          BASE_SHA: 75f5877c3b0d63f5f622ced829841cf74b35a4b5
+          EXPECTED_REMOTE_SHA: ${{ github.sha }}
+        run: |
+          rm -f \
+            .github/workflows/implement-enterprise-workflows.yml \
+            scripts/implement_enterprise_workflows.py
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Materialize enterprise workflow changes'
+          git reset --soft "$BASE_SHA"
+          git commit -m 'Add enterprise risk treatment and ticket workflows'
+          git push \
+            --force-with-lease=refs/heads/agent/enterprise-workflows:"$EXPECTED_REMOTE_SHA" \
+            origin HEAD:agent/enterprise-workflows
