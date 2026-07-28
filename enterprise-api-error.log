@@ -1,27 +1,27 @@
 Collecting uv==0.11.28
   Downloading uv-0.11.28-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (11 kB)
 Downloading uv-0.11.28-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (27.1 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.1/27.1 MB 211.7 MB/s  0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.1/27.1 MB 74.4 MB/s  0:00:00
 Installing collected packages: uv
 Successfully installed uv-0.11.28
 Using CPython 3.12.13 interpreter at: /opt/hostedtoolcache/Python/3.12.13/x64/bin/python3
 Creating virtual environment at: .venv
-Resolved 70 packages in 0.64ms
+Resolved 70 packages in 0.62ms
    Building traceless-api @ file:///home/runner/work/traceless/traceless/apps/api
-Downloading ruff (10.9MiB)
-Downloading pillow (6.6MiB)
-Downloading psycopg-binary (4.9MiB)
-Downloading reportlab (1.9MiB)
 Downloading pygments (1.2MiB)
-Downloading uvloop (4.2MiB)
-Downloading sqlalchemy (3.2MiB)
-Downloading pydantic-core (2.0MiB)
-Downloading pip (1.7MiB)
 Downloading cryptography (4.5MiB)
+Downloading psycopg-binary (4.9MiB)
+Downloading sqlalchemy (3.2MiB)
+Downloading uvloop (4.2MiB)
+Downloading pillow (6.6MiB)
+Downloading reportlab (1.9MiB)
+Downloading pip (1.7MiB)
+Downloading pydantic-core (2.0MiB)
+Downloading ruff (10.9MiB)
  Downloaded pydantic-core
  Downloaded psycopg-binary
- Downloaded pillow
  Downloaded ruff
+ Downloaded pillow
  Downloaded uvloop
  Downloaded reportlab
  Downloaded cryptography
@@ -29,8 +29,8 @@ Downloading cryptography (4.5MiB)
  Downloaded sqlalchemy
  Downloaded pip
       Built traceless-api @ file:///home/runner/work/traceless/traceless/apps/api
-Prepared 68 packages in 940ms
-Installed 68 packages in 41ms
+Prepared 68 packages in 932ms
+Installed 68 packages in 42ms
  + alembic==1.18.5
  + annotated-doc==0.0.4
  + annotated-types==0.7.0
@@ -100,42 +100,48 @@ Installed 68 packages in 41ms
  + watchfiles==1.2.0
  + websockets==16.1
 7 files reformatted, 3 files left unchanged
-E501 Line too long (102 > 100)
-   --> src/traceless_api/integrations/work_management.py:194:101
-    |
-192 |         return ProviderRequest(
-193 |             "GET",
-194 |             f"{base}/rest/api/3/issue/{quote(external_id, safe='')}?fields=status,resolution,updated",
-    |                                                                                                     ^^
-195 |             headers,
-196 |             None,
-    |
-
-Found 3 errors (2 fixed, 1 remaining).
+Found 2 errors (2 fixed, 0 remaining).
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
-ERROR [alembic.util.messaging] Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
-FAILED: Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
+INFO  [alembic.runtime.migration] Running upgrade  -> a8f62014e300, create operational pipeline
+INFO  [alembic.runtime.migration] Running upgrade a8f62014e300 -> c3c7b207ec73, add asset source snapshots
+INFO  [alembic.runtime.migration] Running upgrade c3c7b207ec73 -> d5e4a0b9f211, add global intelligence hub
+INFO  [alembic.runtime.migration] Running upgrade d5e4a0b9f211 -> f7a19c2d4e61, add architecture editor and vulnerability scan imports
+INFO  [alembic.runtime.migration] Running upgrade f7a19c2d4e61 -> e9b6c4d2a801, stabilize asset, finding, evidence and architecture lifecycles
+INFO  [alembic.runtime.migration] Running upgrade e9b6c4d2a801 -> b4f2a91d7c30, add organizations and tenant scope
+INFO  [alembic.runtime.migration] Running upgrade b4f2a91d7c30 -> c8d3e7f14a20, add scan worker leases and cancellation
+INFO  [alembic.runtime.migration] Running upgrade c8d3e7f14a20 -> a1d7e9c4b620, add tenant external connector runs and immutable intel revisions
+INFO  [alembic.runtime.migration] Running upgrade a1d7e9c4b620 -> b2e8f0d5c731, add tenant-bound durable background jobs
+INFO  [alembic.runtime.migration] Running upgrade b2e8f0d5c731 -> d7a4c9e61f20, add per-attempt scan job lease token
+INFO  [alembic.runtime.migration] Running upgrade d7a4c9e61f20 -> f2c91e7a4d30, add authoritative scan generations and immutable asset observations
+INFO  [alembic.runtime.migration] Running upgrade f2c91e7a4d30 -> e4b7a2c93f10, bound external pull quotas and add correlation jobs
+INFO  [alembic.runtime.migration] Running upgrade e4b7a2c93f10 -> a6d4c2f81b90, Enforce PostgreSQL tenant RLS for API and worker runtime connections.
+INFO  [alembic.runtime.migration] Running upgrade a6d4c2f81b90 -> a9c4e2b7d610, add tenant-scoped reachable attack-chain analyses
+INFO  [alembic.runtime.migration] Running upgrade a9c4e2b7d610 -> b1d8f6a3c720, add signed external-feed delta subscription state
+INFO  [alembic.runtime.migration] Running upgrade b1d8f6a3c720 -> c1e7a4d9b620, add enterprise risk treatment and work-item integrations
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
-ERROR [alembic.util.messaging] Target database is not up to date.
-FAILED: Target database is not up to date.
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.schemas
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.tables
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.types
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.constraints
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.defaults
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.comments
+No new upgrade operations detected.
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
-ERROR [alembic.util.messaging] Destination a9c4e2b7d610 is not a valid downgrade target from current head(s)
-FAILED: Destination a9c4e2b7d610 is not a valid downgrade target from current head(s)
+INFO  [alembic.runtime.migration] Running downgrade c1e7a4d9b620 -> b1d8f6a3c720, add enterprise risk treatment and work-item integrations
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
-ERROR [alembic.util.messaging] Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
-FAILED: Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
+INFO  [alembic.runtime.migration] Running upgrade b1d8f6a3c720 -> c1e7a4d9b620, add enterprise risk treatment and work-item integrations
 .........F...................FFFFF                                       [100%]
 =================================== FAILURES ===================================
 ____________ test_oidc_claims_derive_tenant_role_and_audit_identity ____________
 
-self = <sqlalchemy.engine.base.Connection object at 0x7f1b21b93fb0>
-dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21aa6db0>
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21acf7a0>
-statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f1b21aa5910>
+self = <sqlalchemy.engine.base.Connection object at 0x7f6d5c4092b0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c326a80>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1e8560>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f6d5c40b5f0>
 parameters = [('00000000000040008000000000000001',)]
 
     def _exec_single_context(
@@ -262,11 +268,11 @@ parameters = [('00000000000040008000000000000001',)]
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21aa6db0>
-cursor = <sqlite3.Cursor object at 0x7f1b2454f740>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c326a80>
+cursor = <sqlite3.Cursor object at 0x7f6d5dde5fc0>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
 parameters = ('00000000000040008000000000000001',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21acf7a0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1e8560>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -452,11 +458,11 @@ src/traceless_api/services/operational_repository.py:146: in ensure_organization
     self.dialect.do_execute(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21aa6db0>
-cursor = <sqlite3.Cursor object at 0x7f1b2454f740>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c326a80>
+cursor = <sqlite3.Cursor object at 0x7f6d5dde5fc0>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
 parameters = ('00000000000040008000000000000001',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21acf7a0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1e8560>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -470,11 +476,11 @@ E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
 ______ test_projects_systems_and_global_intelligence_are_tenant_isolated _______
 
-self = <sqlalchemy.engine.base.Connection object at 0x7f1b21d59370>
-dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21d5acc0>
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21d5a4b0>
-statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f1b21e00380>
-parameters = [('181e899bdde54a009babb293684b8cf6',)]
+self = <sqlalchemy.engine.base.Connection object at 0x7f6d5cb1af90>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5e1fe480>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5ddaf7a0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f6d5cb1b380>
+parameters = [('f0e44db6a168468597a759cf0f47ecf1',)]
 
     def _exec_single_context(
         self,
@@ -600,11 +606,11 @@ parameters = [('181e899bdde54a009babb293684b8cf6',)]
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21d5acc0>
-cursor = <sqlite3.Cursor object at 0x7f1b21af66c0>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5e1fe480>
+cursor = <sqlite3.Cursor object at 0x7f6d5c152040>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('181e899bdde54a009babb293684b8cf6',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21d5a4b0>
+parameters = ('f0e44db6a168468597a759cf0f47ecf1',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5ddaf7a0>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -614,7 +620,7 @@ E       sqlite3.OperationalError: no such table: organizations
 
 The above exception was the direct cause of the following exception:
 
-tenant_client = (<starlette.testclient.TestClient object at 0x7f1b21be81d0>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
+tenant_client = (<starlette.testclient.TestClient object at 0x7f6d5e1fd7c0>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
 
     def test_projects_systems_and_global_intelligence_are_tenant_isolated(
         tenant_client: tuple[TestClient, dict[str, AuthenticatedPrincipal]],
@@ -765,11 +771,11 @@ src/traceless_api/services/operational_repository.py:146: in ensure_organization
     self.dialect.do_execute(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21d5acc0>
-cursor = <sqlite3.Cursor object at 0x7f1b21af66c0>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5e1fe480>
+cursor = <sqlite3.Cursor object at 0x7f6d5c152040>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('181e899bdde54a009babb293684b8cf6',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21d5a4b0>
+parameters = ('f0e44db6a168468597a759cf0f47ecf1',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5ddaf7a0>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -777,17 +783,17 @@ E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such tabl
 E       [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 E       FROM organizations 
 E       WHERE organizations.id = ?]
-E       [parameters: ('181e899bdde54a009babb293684b8cf6',)]
+E       [parameters: ('f0e44db6a168468597a759cf0f47ecf1',)]
 E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
 ________________ test_rbac_denies_writes_but_keeps_read_access _________________
 
-self = <sqlalchemy.engine.base.Connection object at 0x7f1b21b06840>
-dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21beb140>
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21cce9f0>
-statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f1b21b06d20>
-parameters = [('0f29930c17344411b62824441cc02c3c',)]
+self = <sqlalchemy.engine.base.Connection object at 0x7f6d5c660530>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5cae4980>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c4f2b10>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f6d5c661370>
+parameters = [('1408fd55ac3941e28caa75c3e467cf27',)]
 
     def _exec_single_context(
         self,
@@ -913,11 +919,11 @@ parameters = [('0f29930c17344411b62824441cc02c3c',)]
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21beb140>
-cursor = <sqlite3.Cursor object at 0x7f1b22110140>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5cae4980>
+cursor = <sqlite3.Cursor object at 0x7f6d5c8d75c0>
 statement = 'SELECT projects.id, projects.organization_id, projects.name, projects.description, projects.created_at, projects.updated_at \nFROM projects \nWHERE projects.organization_id = ? ORDER BY projects.created_at'
-parameters = ('0f29930c17344411b62824441cc02c3c',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21cce9f0>
+parameters = ('1408fd55ac3941e28caa75c3e467cf27',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c4f2b10>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -927,7 +933,7 @@ E       sqlite3.OperationalError: no such table: projects
 
 The above exception was the direct cause of the following exception:
 
-tenant_client = (<starlette.testclient.TestClient object at 0x7f1b21ccf260>, {'principal': AuthenticatedPrincipal(subject='user-0f2993...411-b628-24441cc02c3c', roles=frozenset({'viewer'}), authentication_method='oidc', project_ids=None, system_ids=None)})
+tenant_client = (<starlette.testclient.TestClient object at 0x7f6d5cae51c0>, {'principal': AuthenticatedPrincipal(subject='user-1408fd...1e2-8caa-75c3e467cf27', roles=frozenset({'viewer'}), authentication_method='oidc', project_ids=None, system_ids=None)})
 
     def test_rbac_denies_writes_but_keeps_read_access(
         tenant_client: tuple[TestClient, dict[str, AuthenticatedPrincipal]],
@@ -1069,11 +1075,11 @@ src/traceless_api/services/operational_repository.py:180: in list_projects
     self.dialect.do_execute(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21beb140>
-cursor = <sqlite3.Cursor object at 0x7f1b22110140>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5cae4980>
+cursor = <sqlite3.Cursor object at 0x7f6d5c8d75c0>
 statement = 'SELECT projects.id, projects.organization_id, projects.name, projects.description, projects.created_at, projects.updated_at \nFROM projects \nWHERE projects.organization_id = ? ORDER BY projects.created_at'
-parameters = ('0f29930c17344411b62824441cc02c3c',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21cce9f0>
+parameters = ('1408fd55ac3941e28caa75c3e467cf27',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c4f2b10>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -1081,17 +1087,17 @@ E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such tabl
 E       [SQL: SELECT projects.id, projects.organization_id, projects.name, projects.description, projects.created_at, projects.updated_at 
 E       FROM projects 
 E       WHERE projects.organization_id = ? ORDER BY projects.created_at]
-E       [parameters: ('0f29930c17344411b62824441cc02c3c',)]
+E       [parameters: ('1408fd55ac3941e28caa75c3e467cf27',)]
 E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
 ___________ test_scanner_role_cannot_browse_or_import_analysis_data ____________
 
-self = <sqlalchemy.engine.base.Connection object at 0x7f1b21821370>
-dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21ccf680>
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21b34590>
-statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f1b21851be0>
-parameters = [('977609c3dcff4db5a19a2701c21dd315',)]
+self = <sqlalchemy.engine.base.Connection object at 0x7f6d5c20c530>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c886a50>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c4b9df0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f6d5c23d400>
+parameters = [('f653411d20854879836ec3c4ad6a32ab',)]
 
     def _exec_single_context(
         self,
@@ -1217,11 +1223,11 @@ parameters = [('977609c3dcff4db5a19a2701c21dd315',)]
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21ccf680>
-cursor = <sqlite3.Cursor object at 0x7f1b21854840>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c886a50>
+cursor = <sqlite3.Cursor object at 0x7f6d5c23a9c0>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('977609c3dcff4db5a19a2701c21dd315',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21b34590>
+parameters = ('f653411d20854879836ec3c4ad6a32ab',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c4b9df0>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -1231,7 +1237,7 @@ E       sqlite3.OperationalError: no such table: organizations
 
 The above exception was the direct cause of the following exception:
 
-tenant_client = (<starlette.testclient.TestClient object at 0x7f1b219c8710>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
+tenant_client = (<starlette.testclient.TestClient object at 0x7f6d5c4b9e20>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
 
     def test_scanner_role_cannot_browse_or_import_analysis_data(
         tenant_client: tuple[TestClient, dict[str, AuthenticatedPrincipal]],
@@ -1382,11 +1388,11 @@ src/traceless_api/services/operational_repository.py:146: in ensure_organization
     self.dialect.do_execute(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b21ccf680>
-cursor = <sqlite3.Cursor object at 0x7f1b21854840>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c886a50>
+cursor = <sqlite3.Cursor object at 0x7f6d5c23a9c0>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('977609c3dcff4db5a19a2701c21dd315',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21b34590>
+parameters = ('f653411d20854879836ec3c4ad6a32ab',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c4b9df0>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -1394,17 +1400,17 @@ E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such tabl
 E       [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 E       FROM organizations 
 E       WHERE organizations.id = ?]
-E       [parameters: ('977609c3dcff4db5a19a2701c21dd315',)]
+E       [parameters: ('f653411d20854879836ec3c4ad6a32ab',)]
 E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
 ____ test_project_and_system_assignments_are_enforced_as_object_boundaries _____
 
-self = <sqlalchemy.engine.base.Connection object at 0x7f1b218a8a40>
-dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b219c99a0>
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b219673e0>
-statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f1b21964860>
-parameters = [('35ae8e6440c241808b8d37017dc95fde',)]
+self = <sqlalchemy.engine.base.Connection object at 0x7f6d5c48f530>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c4b9700>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1a4650>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f6d5c2f69c0>
+parameters = [('db4631b431de4670ad3af98e535818ed',)]
 
     def _exec_single_context(
         self,
@@ -1530,11 +1536,11 @@ parameters = [('35ae8e6440c241808b8d37017dc95fde',)]
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b219c99a0>
-cursor = <sqlite3.Cursor object at 0x7f1b1b700940>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c4b9700>
+cursor = <sqlite3.Cursor object at 0x7f6d54a76840>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('35ae8e6440c241808b8d37017dc95fde',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b219673e0>
+parameters = ('db4631b431de4670ad3af98e535818ed',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1a4650>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -1544,7 +1550,7 @@ E       sqlite3.OperationalError: no such table: organizations
 
 The above exception was the direct cause of the following exception:
 
-tenant_client = (<starlette.testclient.TestClient object at 0x7f1b21964500>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
+tenant_client = (<starlette.testclient.TestClient object at 0x7f6d5e164bc0>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
 
     def test_project_and_system_assignments_are_enforced_as_object_boundaries(
         tenant_client: tuple[TestClient, dict[str, AuthenticatedPrincipal]],
@@ -1715,11 +1721,11 @@ src/traceless_api/services/operational_repository.py:146: in ensure_organization
     self.dialect.do_execute(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b219c99a0>
-cursor = <sqlite3.Cursor object at 0x7f1b1b700940>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c4b9700>
+cursor = <sqlite3.Cursor object at 0x7f6d54a76840>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('35ae8e6440c241808b8d37017dc95fde',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b219673e0>
+parameters = ('db4631b431de4670ad3af98e535818ed',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1a4650>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -1727,17 +1733,17 @@ E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such tabl
 E       [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 E       FROM organizations 
 E       WHERE organizations.id = ?]
-E       [parameters: ('35ae8e6440c241808b8d37017dc95fde',)]
+E       [parameters: ('db4631b431de4670ad3af98e535818ed',)]
 E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
 _____ test_unauthorized_system_read_cannot_trigger_temporal_reconciliation _____
 
-self = <sqlalchemy.engine.base.Connection object at 0x7f1b21904770>
-dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b219672c0>
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21904ce0>
-statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f1b21c44860>
-parameters = [('a95d74422336478ca0125a5867bc40ad',)]
+self = <sqlalchemy.engine.base.Connection object at 0x7f6d5c1eb9b0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c3b2750>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1e9e20>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f6d5c466390>
+parameters = [('3190aa1709964bfca5b7b58b79b31ff8',)]
 
     def _exec_single_context(
         self,
@@ -1863,11 +1869,11 @@ parameters = [('a95d74422336478ca0125a5867bc40ad',)]
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b219672c0>
-cursor = <sqlite3.Cursor object at 0x7f1b220d1140>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c3b2750>
+cursor = <sqlite3.Cursor object at 0x7f6d5c26aa40>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('a95d74422336478ca0125a5867bc40ad',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21904ce0>
+parameters = ('3190aa1709964bfca5b7b58b79b31ff8',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1e9e20>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -1877,8 +1883,8 @@ E       sqlite3.OperationalError: no such table: organizations
 
 The above exception was the direct cause of the following exception:
 
-tenant_client = (<starlette.testclient.TestClient object at 0x7f1b2228bce0>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
-monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1b21b90dd0>
+tenant_client = (<starlette.testclient.TestClient object at 0x7f6d5c48c170>, {'principal': AuthenticatedPrincipal(subject='admin-a', a...rozenset({'scanner', 'viewer', 'analyst', 'admin'}), authentication_method='oidc', project_ids=None, system_ids=None)})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f6d5c424680>
 
     def test_unauthorized_system_read_cannot_trigger_temporal_reconciliation(
         tenant_client: tuple[TestClient, dict[str, AuthenticatedPrincipal]],
@@ -2031,11 +2037,11 @@ src/traceless_api/services/operational_repository.py:146: in ensure_organization
     self.dialect.do_execute(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f1b219672c0>
-cursor = <sqlite3.Cursor object at 0x7f1b220d1140>
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f6d5c3b2750>
+cursor = <sqlite3.Cursor object at 0x7f6d5c26aa40>
 statement = 'SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations....ons_created_at, organizations.updated_at AS organizations_updated_at \nFROM organizations \nWHERE organizations.id = ?'
-parameters = ('a95d74422336478ca0125a5867bc40ad',)
-context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f1b21904ce0>
+parameters = ('3190aa1709964bfca5b7b58b79b31ff8',)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f6d5c1e9e20>
 
     def do_execute(self, cursor, statement, parameters, context=None):
 >       cursor.execute(statement, parameters)
@@ -2043,7 +2049,7 @@ E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such tabl
 E       [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 E       FROM organizations 
 E       WHERE organizations.id = ?]
-E       [parameters: ('a95d74422336478ca0125a5867bc40ad',)]
+E       [parameters: ('3190aa1709964bfca5b7b58b79b31ff8',)]
 E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 .venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
@@ -2064,29 +2070,29 @@ FAILED tests/test_tenant_rbac.py::test_projects_systems_and_global_intelligence_
 [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 FROM organizations 
 WHERE organizations.id = ?]
-[parameters: ('181e899bdde54a009babb293684b8cf6',)]
+[parameters: ('f0e44db6a168468597a759cf0f47ecf1',)]
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
 FAILED tests/test_tenant_rbac.py::test_rbac_denies_writes_but_keeps_read_access - sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: projects
 [SQL: SELECT projects.id, projects.organization_id, projects.name, projects.description, projects.created_at, projects.updated_at 
 FROM projects 
 WHERE projects.organization_id = ? ORDER BY projects.created_at]
-[parameters: ('0f29930c17344411b62824441cc02c3c',)]
+[parameters: ('1408fd55ac3941e28caa75c3e467cf27',)]
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
 FAILED tests/test_tenant_rbac.py::test_scanner_role_cannot_browse_or_import_analysis_data - sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: organizations
 [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 FROM organizations 
 WHERE organizations.id = ?]
-[parameters: ('977609c3dcff4db5a19a2701c21dd315',)]
+[parameters: ('f653411d20854879836ec3c4ad6a32ab',)]
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
 FAILED tests/test_tenant_rbac.py::test_project_and_system_assignments_are_enforced_as_object_boundaries - sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: organizations
 [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 FROM organizations 
 WHERE organizations.id = ?]
-[parameters: ('35ae8e6440c241808b8d37017dc95fde',)]
+[parameters: ('db4631b431de4670ad3af98e535818ed',)]
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
 FAILED tests/test_tenant_rbac.py::test_unauthorized_system_read_cannot_trigger_temporal_reconciliation - sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: organizations
 [SQL: SELECT organizations.id AS organizations_id, organizations.external_key AS organizations_external_key, organizations.name AS organizations_name, organizations.created_at AS organizations_created_at, organizations.updated_at AS organizations_updated_at 
 FROM organizations 
 WHERE organizations.id = ?]
-[parameters: ('a95d74422336478ca0125a5867bc40ad',)]
+[parameters: ('3190aa1709964bfca5b7b58b79b31ff8',)]
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
