@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   materialize-enterprise-workflows:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -39,40 +39,56 @@ jobs:
           TRACELESS_DATABASE_URL: sqlite+pysqlite:////tmp/traceless-enterprise.db
           TRACELESS_AUTO_CREATE_SCHEMA: 'false'
         run: |
-          python -m pip install uv==0.11.28
-          uv sync --locked --extra dev
-          .venv/bin/ruff format \
-            src/traceless_api/core/config.py \
-            src/traceless_api/db/work_management.py \
-            src/traceless_api/models/work_management.py \
-            src/traceless_api/integrations/work_management.py \
-            src/traceless_api/services/work_management.py \
-            src/traceless_api/api/routes/work_management.py \
-            src/traceless_api/api/router.py \
-            migrations/env.py \
-            migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py \
-            tests/test_work_management.py
-          .venv/bin/ruff check --fix \
-            src/traceless_api/core/config.py \
-            src/traceless_api/db/work_management.py \
-            src/traceless_api/models/work_management.py \
-            src/traceless_api/integrations/work_management.py \
-            src/traceless_api/services/work_management.py \
-            src/traceless_api/api/routes/work_management.py \
-            src/traceless_api/api/router.py \
-            migrations/env.py \
-            migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py \
-            tests/test_work_management.py
-          rm -f /tmp/traceless-enterprise.db
-          .venv/bin/alembic upgrade head
-          .venv/bin/alembic check
-          .venv/bin/alembic downgrade a9c4e2b7d610
-          .venv/bin/alembic upgrade head
-          .venv/bin/python scripts/export_openapi.py ../web/openapi.json
-          .venv/bin/pytest -q \
-            tests/test_work_management.py \
-            tests/test_operational_auth.py \
-            tests/test_tenant_rbac.py
+          set +e
+          {
+            python -m pip install uv==0.11.28
+            uv sync --locked --extra dev
+            .venv/bin/ruff format \
+              src/traceless_api/core/config.py \
+              src/traceless_api/db/work_management.py \
+              src/traceless_api/models/work_management.py \
+              src/traceless_api/integrations/work_management.py \
+              src/traceless_api/services/work_management.py \
+              src/traceless_api/api/routes/work_management.py \
+              src/traceless_api/api/router.py \
+              migrations/env.py \
+              migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py \
+              tests/test_work_management.py
+            .venv/bin/ruff check --fix \
+              src/traceless_api/core/config.py \
+              src/traceless_api/db/work_management.py \
+              src/traceless_api/models/work_management.py \
+              src/traceless_api/integrations/work_management.py \
+              src/traceless_api/services/work_management.py \
+              src/traceless_api/api/routes/work_management.py \
+              src/traceless_api/api/router.py \
+              migrations/env.py \
+              migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py \
+              tests/test_work_management.py
+            rm -f /tmp/traceless-enterprise.db
+            .venv/bin/alembic upgrade head
+            .venv/bin/alembic check
+            .venv/bin/alembic downgrade a9c4e2b7d610
+            .venv/bin/alembic upgrade head
+            .venv/bin/python scripts/export_openapi.py ../web/openapi.json
+            .venv/bin/pytest -q \
+              tests/test_work_management.py \
+              tests/test_operational_auth.py \
+              tests/test_tenant_rbac.py
+          } > ../../enterprise-api-error.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cat ../../enterprise-api-error.log
+            cd ../..
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add enterprise-api-error.log
+            git commit -m 'Capture enterprise API validation error'
+            git push origin HEAD:agent/enterprise-workflows
+            exit "$status"
+          fi
+          rm -f ../../enterprise-api-error.log
 
       - name: Test and build customer web
         working-directory: apps/web
