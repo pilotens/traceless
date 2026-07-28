@@ -30,7 +30,40 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Apply enterprise implementation
-        run: python scripts/implement_enterprise_workflows.py
+        run: |
+          python scripts/implement_enterprise_workflows.py
+          python - <<'PY'
+          from pathlib import Path
+
+          integration = Path('apps/api/src/traceless_api/integrations/work_management.py')
+          text = integration.read_text()
+          text = text.replace(
+              '        return ProviderRequest(\n'
+              '            "GET",\n'
+              '            f"{base}/rest/api/3/issue/{quote(external_id, safe=\'\')}?fields=status,resolution,updated",\n'
+              '            headers,\n'
+              '            None,\n'
+              '        )\n',
+              '        issue_id = quote(external_id, safe="")\n'
+              '        url = (\n'
+              '            f"{base}/rest/api/3/issue/{issue_id}"\n'
+              '            "?fields=status,resolution,updated"\n'
+              '        )\n'
+              '        return ProviderRequest("GET", url, headers, None)\n',
+          )
+          integration.write_text(text)
+
+          migration = Path(
+              'apps/api/migrations/versions/c1e7a4d9b620_add_enterprise_workflows.py'
+          )
+          text = migration.read_text()
+          text = text.replace('Revises: a9c4e2b7d610', 'Revises: b1d8f6a3c720')
+          text = text.replace(
+              'down_revision: str | Sequence[str] | None = "a9c4e2b7d610"',
+              'down_revision: str | Sequence[str] | None = "b1d8f6a3c720"',
+          )
+          migration.write_text(text)
+          PY
 
       - name: Format, migrate and test API
         working-directory: apps/api
@@ -40,7 +73,8 @@ jobs:
           TRACELESS_AUTO_CREATE_SCHEMA: 'false'
         run: |
           set +e
-          {
+          (
+            set -e
             python -m pip install uv==0.11.28
             uv sync --locked --extra dev
             .venv/bin/ruff format \
@@ -68,14 +102,14 @@ jobs:
             rm -f /tmp/traceless-enterprise.db
             .venv/bin/alembic upgrade head
             .venv/bin/alembic check
-            .venv/bin/alembic downgrade a9c4e2b7d610
+            .venv/bin/alembic downgrade b1d8f6a3c720
             .venv/bin/alembic upgrade head
             .venv/bin/python scripts/export_openapi.py ../web/openapi.json
             .venv/bin/pytest -q \
               tests/test_work_management.py \
               tests/test_operational_auth.py \
               tests/test_tenant_rbac.py
-          } > ../../enterprise-api-error.log 2>&1
+          ) > ../../enterprise-api-error.log 2>&1
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then
@@ -106,7 +140,8 @@ jobs:
           git show "$BASE_SHA:.github/workflows/ci.yml" > .github/workflows/ci.yml
           rm -f \
             .github/workflows/implement-enterprise-workflows.yml \
-            scripts/implement_enterprise_workflows.py
+            scripts/implement_enterprise_workflows.py \
+            enterprise-api-error.log
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
