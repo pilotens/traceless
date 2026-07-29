@@ -35,6 +35,19 @@ export interface SystemContextVersion extends SystemContextInput {
   published_at: string | null;
 }
 
+export interface ContextualRiskReassessment {
+  system_id: string;
+  context_version_id: string;
+  context_version: number;
+  risks_considered: number;
+  risks_updated: number;
+  vulnerability_risks: number;
+  threat_risks: number;
+  selected_business_impact: number;
+  selected_impact_dimensions: string[];
+  warnings: string[];
+}
+
 export interface RiskTreatmentInput {
   strategy: 'mitigate' | 'avoid' | 'transfer' | 'accept';
   title: string;
@@ -182,6 +195,10 @@ export function createGovernanceApi(options: GovernanceClientOptions) {
         `${systemPath(systemId)}/context/versions/${encodeURIComponent(contextId)}/publish`,
         { method: 'POST' },
       ),
+    reassessRisks: (systemId: string) =>
+      request<ContextualRiskReassessment>(`${systemPath(systemId)}/risks/reassess`, {
+        method: 'POST',
+      }),
     risks: (systemId: string) =>
       request<Page<RiskSummary>>(`${systemPath(systemId)}/risks?limit=200&status=open`),
     treatments: (systemId: string) =>
