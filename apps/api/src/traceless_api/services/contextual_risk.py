@@ -31,7 +31,10 @@ def _criticality_for_impact(value: int) -> str:
     return {1: "low", 2: "low", 3: "medium", 4: "high", 5: "critical"}[value]
 
 
-def _architecture_contexts(repository: OperationalRepository, system_id: UUID) -> dict[tuple[str, str | None], dict[str, Any]]:
+def _architecture_contexts(
+    repository: OperationalRepository,
+    system_id: UUID,
+) -> dict[tuple[str, str | None], dict[str, Any]]:
     architecture = repository.latest_architecture(system_id)
     if architecture is None or not isinstance(architecture.graph, dict):
         return {}
