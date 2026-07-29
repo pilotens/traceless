@@ -11,6 +11,7 @@ from traceless_api.api.auth import (
     require_read_access,
 )
 from traceless_api.api.dependencies import OperationalRepositoryDependency
+from traceless_api.models.contextual_risk import ContextualRiskReassessmentView
 from traceless_api.models.governance import (
     AnalysisManifestCreate,
     AnalysisManifestView,
@@ -28,6 +29,7 @@ from traceless_api.models.governance import (
     SystemContextCreate,
     SystemContextView,
 )
+from traceless_api.services.contextual_risk import reassess_current_risks
 from traceless_api.services.risk_governance import (
     add_risk_evidence,
     assess_control,
@@ -112,6 +114,19 @@ def publish_context_version(
     actor: OperationalActor,
 ) -> SystemContextView:
     return publish_context(repository, system_id, context_id, actor)
+
+
+@router.post(
+    "/systems/{system_id}/risks/reassess",
+    response_model=ContextualRiskReassessmentView,
+    dependencies=[Depends(require_analyst_access)],
+)
+def reassess_risks(
+    system_id: UUID,
+    repository: OperationalRepositoryDependency,
+    actor: OperationalActor,
+) -> ContextualRiskReassessmentView:
+    return reassess_current_risks(repository, system_id, actor)
 
 
 @router.post(
