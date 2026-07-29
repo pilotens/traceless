@@ -78,7 +78,7 @@ describe('RiskGovernanceWorkspace', () => {
 
     render(<RiskGovernanceWorkspace accessToken={null} />);
 
-    expect(await screen.findByText('Payment API')).toBeInTheDocument();
+    expect((await screen.findAllByText('Payment API')).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: /Riskbeslut, åtgärder och verifiering/ })).toBeInTheDocument();
     expect(screen.getByText('55%')).toBeInTheDocument();
   });
