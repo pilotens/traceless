@@ -1012,6 +1012,55 @@ export interface CisoRiskSummary {
   security_score: number;
 }
 
+/** ContextualRiskReassessmentView */
+export interface ContextualRiskReassessmentView {
+  /**
+   * Context Version
+   * @min 1
+   */
+  context_version: number;
+  /**
+   * Context Version Id
+   * @format uuid
+   */
+  context_version_id: string;
+  /**
+   * Risks Considered
+   * @min 0
+   */
+  risks_considered: number;
+  /**
+   * Risks Updated
+   * @min 0
+   */
+  risks_updated: number;
+  /**
+   * Selected Business Impact
+   * @min 1
+   * @max 5
+   */
+  selected_business_impact: number;
+  /** Selected Impact Dimensions */
+  selected_impact_dimensions: string[];
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /**
+   * Threat Risks
+   * @min 0
+   */
+  threat_risks: number;
+  /**
+   * Vulnerability Risks
+   * @min 0
+   */
+  vulnerability_risks: number;
+  /** Warnings */
+  warnings?: string[];
+}
+
 /** ControlAssessmentCreate */
 export interface ControlAssessmentCreate {
   /**

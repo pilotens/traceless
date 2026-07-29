@@ -1885,6 +1885,79 @@
         "title": "CisoRiskSummary",
         "type": "object"
       },
+      "ContextualRiskReassessmentView": {
+        "additionalProperties": false,
+        "properties": {
+          "context_version": {
+            "minimum": 1.0,
+            "title": "Context Version",
+            "type": "integer"
+          },
+          "context_version_id": {
+            "format": "uuid",
+            "title": "Context Version Id",
+            "type": "string"
+          },
+          "risks_considered": {
+            "minimum": 0.0,
+            "title": "Risks Considered",
+            "type": "integer"
+          },
+          "risks_updated": {
+            "minimum": 0.0,
+            "title": "Risks Updated",
+            "type": "integer"
+          },
+          "selected_business_impact": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Selected Business Impact",
+            "type": "integer"
+          },
+          "selected_impact_dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selected Impact Dimensions",
+            "type": "array"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "threat_risks": {
+            "minimum": 0.0,
+            "title": "Threat Risks",
+            "type": "integer"
+          },
+          "vulnerability_risks": {
+            "minimum": 0.0,
+            "title": "Vulnerability Risks",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "system_id",
+          "context_version_id",
+          "context_version",
+          "risks_considered",
+          "risks_updated",
+          "vulnerability_risks",
+          "threat_risks",
+          "selected_business_impact",
+          "selected_impact_dimensions"
+        ],
+        "title": "ContextualRiskReassessmentView",
+        "type": "object"
+      },
       "ControlAssessmentCreate": {
         "additionalProperties": false,
         "properties": {
@@ -12345,6 +12418,72 @@
         "summary": "Risks Page",
         "tags": [
           "operational-collections"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/risks/reassess": {
+      "post": {
+        "operationId": "reassess_risks_api_v1_operational_systems__system_id__risks_reassess_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextualRiskReassessmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reassess Risks",
+        "tags": [
+          "risk-governance"
         ]
       }
     },
