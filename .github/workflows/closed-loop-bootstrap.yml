@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/closed-loop-risk-platform
+  pull_request:
+    branches:
+      - agent/initial-platform
   workflow_dispatch:
 
 permissions:
@@ -27,21 +30,17 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: apps/api/uv.lock
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
       - name: Install backend
         working-directory: apps/api
         run: |
           python -m pip install uv==0.11.28
           uv sync --locked --extra dev
-      - name: Generate migration
-        working-directory: apps/api
-        env:
-          TRACELESS_DATABASE_URL: sqlite+pysqlite:///./closed-loop-autogen.db
-          TRACELESS_AUTO_CREATE_SCHEMA: 'false'
-        run: |
-          .venv/bin/alembic upgrade head
-          .venv/bin/alembic revision --autogenerate -m 'add closed loop risk governance'
-          rm -f closed-loop-autogen.db
-      - name: Format and lint
+      - name: Format and lint backend
         working-directory: apps/api
         run: |
           .venv/bin/ruff format \
@@ -50,24 +49,36 @@ jobs:
             src/traceless_api/services/risk_governance.py \
             src/traceless_api/api/routes/governance.py \
             tests/test_risk_governance.py \
-            migrations/versions/*closed_loop_risk_governance*.py
+            migrations/versions/c4a8e2d7f910_add_closed_loop_risk_governance.py
           .venv/bin/ruff check --fix \
             src/traceless_api/db/governance_models.py \
             src/traceless_api/models/governance.py \
             src/traceless_api/services/risk_governance.py \
             src/traceless_api/api/routes/governance.py \
             tests/test_risk_governance.py \
-            migrations/versions/*closed_loop_risk_governance*.py
+            migrations/versions/c4a8e2d7f910_add_closed_loop_risk_governance.py
       - name: Export OpenAPI
         working-directory: apps/api
         run: .venv/bin/python scripts/export_openapi.py ../web/openapi.json
-      - name: Test governance backend
-        working-directory: apps/api
-        run: .venv/bin/pytest -q tests/test_risk_governance.py tests/test_operational_auth.py tests/test_postgres_fullstack.py
-      - name: Commit verified backend slice
+      - name: Generate frontend contracts
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run generate:api
+      - name: Test governance slice
+        run: |
+          cd apps/api
+          .venv/bin/pytest -q tests/test_risk_governance.py tests/test_operational_auth.py
+          cd ../web
+          npm run test -- --run src/components/RiskGovernanceWorkspace.test.tsx src/App.test.tsx
+          npm run build
+      - name: Commit verified generated files
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add apps/api apps/web/openapi.json
-          git commit -m 'Add closed-loop risk governance backend'
+          git add apps/api apps/web
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Verify closed-loop risk governance slice'
           git push origin HEAD:agent/closed-loop-risk-platform
