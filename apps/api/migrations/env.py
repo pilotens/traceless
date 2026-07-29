@@ -6,7 +6,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from traceless_api.core.config import Settings
-from traceless_api.db import models  # noqa: F401
+from traceless_api.db import governance_models, models  # noqa: F401
 from traceless_api.db.base import Base
 
 config = context.config
