@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 
@@ -22,10 +23,11 @@ def _system_with_risk(client: TestClient) -> tuple[str, str]:
     )
     assert system.status_code == 201, system.text
     system_id = system.json()["id"]
+    system_uuid = UUID(system_id)
 
     with client.app.state.session_factory() as session:
         threat = ThreatRow(
-            system_id=system_id,
+            system_id=system_uuid,
             source="governance-test",
             external_id="threat-1",
             title="Targeted campaign",
@@ -41,7 +43,7 @@ def _system_with_risk(client: TestClient) -> tuple[str, str]:
         session.add(threat)
         session.flush()
         risk = RiskRow(
-            system_id=system_id,
+            system_id=system_uuid,
             finding_id=None,
             threat_id=threat.id,
             title="Compromise through targeted campaign",
