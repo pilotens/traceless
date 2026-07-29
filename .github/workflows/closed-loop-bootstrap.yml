@@ -40,13 +40,13 @@ jobs:
         run: |
           python -m pip install uv==0.11.28
           uv sync --locked --extra dev
-      - name: Add contextual reassessment control
+      - name: Apply deterministic source corrections
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('apps/web/src/components/RiskGovernanceWorkspace.tsx')
-          text = path.read_text()
+          ui_path = Path('apps/web/src/components/RiskGovernanceWorkspace.tsx')
+          ui_text = ui_path.read_text()
           marker = """                    {context.status === 'draft' && (
                       <button disabled={busy} onClick={() => void run(async () => {
                         await api.publishContext(selectedSystemId, context.id);
@@ -61,9 +61,25 @@ jobs:
                       })}>Ombedöm risker</button>
                     )}
 """
-          if marker not in text:
-              raise SystemExit('Published-context UI marker not found')
-          path.write_text(text.replace(marker, replacement, 1))
+          if 'Ombedöm risker' not in ui_text:
+              if marker not in ui_text:
+                  raise SystemExit('Published-context UI marker not found')
+              ui_path.write_text(ui_text.replace(marker, replacement, 1))
+
+          migration_path = Path(
+              'apps/api/migrations/versions/c4a8e2d7f910_add_closed_loop_risk_governance.py'
+          )
+          migration_text = migration_path.read_text()
+          migration_text = migration_text.replace(
+              'Revises: a9c4e2b7d610',
+              'Revises: b1d8f6a3c720',
+              1,
+          ).replace(
+              'down_revision: str | Sequence[str] | None = "a9c4e2b7d610"',
+              'down_revision: str | Sequence[str] | None = "b1d8f6a3c720"',
+              1,
+          )
+          migration_path.write_text(migration_text)
           PY
       - name: Format and lint backend
         working-directory: apps/api
@@ -86,6 +102,11 @@ jobs:
             src/traceless_api/api/routes/governance.py \
             tests/test_risk_governance.py \
             migrations/versions/c4a8e2d7f910_add_closed_loop_risk_governance.py
+      - name: Verify single migration head
+        working-directory: apps/api
+        run: |
+          heads="$((.venv/bin/alembic heads) 2>/dev/null | grep -c '(head)')"
+          test "$heads" -eq 1
       - name: Export OpenAPI
         working-directory: apps/api
         run: .venv/bin/python scripts/export_openapi.py ../web/openapi.json
