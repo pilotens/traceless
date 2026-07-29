@@ -54,9 +54,7 @@ class SystemContextView(SystemContextCreate):
 
 
 class RiskEvidenceLinkCreate(StrictModel):
-    evidence_type: Literal[
-        "finding", "threat", "architecture", "control", "attack_chain", "manual"
-    ]
+    evidence_type: Literal["finding", "threat", "architecture", "control", "attack_chain", "manual"]
     evidence_id: str = Field(min_length=1, max_length=240)
     label: str = Field(min_length=2, max_length=500)
     source_version: str | None = Field(default=None, max_length=200)
@@ -92,9 +90,9 @@ class RiskTreatmentCreate(StrictModel):
 
 
 class RiskTreatmentUpdate(StrictModel):
-    status: Literal[
-        "proposed", "approved", "in_progress", "verification", "closed", "cancelled"
-    ] | None = None
+    status: (
+        Literal["proposed", "approved", "in_progress", "verification", "closed", "cancelled"] | None
+    ) = None
     owner: str | None = Field(default=None, min_length=2, max_length=160)
     approver: str | None = Field(default=None, max_length=160)
     due_at: datetime | None = None
@@ -122,9 +120,7 @@ class RiskTreatmentView(StrictModel):
     description: str
     owner: str
     approver: str | None
-    status: Literal[
-        "proposed", "approved", "in_progress", "verification", "closed", "cancelled"
-    ]
+    status: Literal["proposed", "approved", "in_progress", "verification", "closed", "cancelled"]
     priority: RiskLevel
     due_at: AwareDatetime | None
     sla_days: int | None

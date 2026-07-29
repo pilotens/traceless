@@ -87,8 +87,7 @@ def test_closed_loop_context_treatment_control_and_manifest(client: TestClient) 
     )
     assert context.status_code == 201, context.text
     published = client.post(
-        f"/api/v1/operational/systems/{system_id}/context/versions/"
-        f"{context.json()['id']}/publish"
+        f"/api/v1/operational/systems/{system_id}/context/versions/{context.json()['id']}/publish"
     )
     assert published.status_code == 200, published.text
     assert published.json()["status"] == "published"
@@ -119,8 +118,7 @@ def test_closed_loop_context_treatment_control_and_manifest(client: TestClient) 
     )
     assert treatment.status_code == 201, treatment.text
     approved = client.patch(
-        f"/api/v1/operational/systems/{system_id}/treatments/"
-        f"{treatment.json()['id']}",
+        f"/api/v1/operational/systems/{system_id}/treatments/{treatment.json()['id']}",
         json={
             "status": "approved",
             "decision_note": "Approved by risk owner.",
@@ -141,8 +139,7 @@ def test_closed_loop_context_treatment_control_and_manifest(client: TestClient) 
     )
     assert control.status_code == 201, control.text
     assessment = client.post(
-        f"/api/v1/operational/systems/{system_id}/controls/"
-        f"{control.json()['id']}/assessments",
+        f"/api/v1/operational/systems/{system_id}/controls/{control.json()['id']}/assessments",
         json={
             "design_effectiveness": 0.8,
             "operating_effectiveness": 0.7,
@@ -160,9 +157,7 @@ def test_closed_loop_context_treatment_control_and_manifest(client: TestClient) 
     assert manifest.status_code == 201, manifest.text
     assert len(manifest.json()["source_fingerprint"]) == 64
 
-    overview = client.get(
-        f"/api/v1/operational/systems/{system_id}/governance/overview"
-    )
+    overview = client.get(f"/api/v1/operational/systems/{system_id}/governance/overview")
     assert overview.status_code == 200, overview.text
     assert overview.json()["published_context"]["business_owner"] == "Head of Payments"
     assert overview.json()["risks_with_active_treatment"] == 1
@@ -185,8 +180,7 @@ def test_treatment_cannot_close_without_residual_risk(client: TestClient) -> Non
     )
     assert treatment.status_code == 201
     closed = client.patch(
-        f"/api/v1/operational/systems/{system_id}/treatments/"
-        f"{treatment.json()['id']}",
+        f"/api/v1/operational/systems/{system_id}/treatments/{treatment.json()['id']}",
         json={"status": "closed", "decision_note": "Done"},
     )
     assert closed.status_code == 409

@@ -136,9 +136,7 @@ class RiskTreatmentRow(Base):
     residual_level: Mapped[str | None] = mapped_column(String(20))
     created_by: Mapped[str] = mapped_column(String(160), nullable=False)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(
-        UTCDateTime(), default=utc_now, onupdate=utc_now
-    )
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now, onupdate=utc_now)
     approved_by: Mapped[str | None] = mapped_column(String(160))
     approved_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     verified_by: Mapped[str | None] = mapped_column(String(160))
@@ -168,9 +166,7 @@ class ControlRow(Base):
     status: Mapped[str] = mapped_column(String(24), default="planned", nullable=False)
     created_by: Mapped[str] = mapped_column(String(160), nullable=False)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(
-        UTCDateTime(), default=utc_now, onupdate=utc_now
-    )
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now, onupdate=utc_now)
 
 
 class ControlAssessmentRow(Base):

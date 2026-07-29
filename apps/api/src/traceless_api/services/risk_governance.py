@@ -103,9 +103,7 @@ def create_context(
     actor: str,
 ) -> SystemContextView:
     repository.get_system(system_id)
-    repository.session.execute(
-        select(SystemRow).where(SystemRow.id == system_id).with_for_update()
-    )
+    repository.session.execute(select(SystemRow).where(SystemRow.id == system_id).with_for_update())
     current_version = repository.session.scalar(
         select(func.max(SystemContextVersionRow.version)).where(
             SystemContextVersionRow.system_id == system_id
@@ -136,9 +134,7 @@ def create_context(
     return _context_view(row)
 
 
-def list_contexts(
-    repository: OperationalRepository, system_id: UUID
-) -> list[SystemContextView]:
+def list_contexts(repository: OperationalRepository, system_id: UUID) -> list[SystemContextView]:
     repository.get_system(system_id)
     rows = repository.session.scalars(
         select(SystemContextVersionRow)
@@ -155,9 +151,7 @@ def publish_context(
     actor: str,
 ) -> SystemContextView:
     repository.get_system(system_id)
-    repository.session.execute(
-        select(SystemRow).where(SystemRow.id == system_id).with_for_update()
-    )
+    repository.session.execute(select(SystemRow).where(SystemRow.id == system_id).with_for_update())
     target = repository.session.scalar(
         select(SystemContextVersionRow).where(
             SystemContextVersionRow.id == context_id,
@@ -341,9 +335,7 @@ def list_treatments(
     risk_id: UUID | None = None,
 ) -> list[RiskTreatmentView]:
     repository.get_system(system_id)
-    statement = select(RiskTreatmentRow).where(
-        RiskTreatmentRow.system_id == system_id
-    )
+    statement = select(RiskTreatmentRow).where(RiskTreatmentRow.system_id == system_id)
     if risk_id is not None:
         _risk(repository, system_id, risk_id)
         statement = statement.where(RiskTreatmentRow.risk_id == risk_id)
@@ -399,9 +391,7 @@ def update_treatment(
                     "Closing a treatment requires a residual-risk assessment"
                 )
             if not row.verification_criteria:
-                raise OperationalConflictError(
-                    "Closing a treatment requires verification criteria"
-                )
+                raise OperationalConflictError("Closing a treatment requires verification criteria")
             row.verified_by = actor
             row.verified_at = now
         row.status = status
@@ -436,9 +426,7 @@ def create_control(
     return ControlView.model_validate(row)
 
 
-def list_controls(
-    repository: OperationalRepository, system_id: UUID
-) -> list[ControlView]:
+def list_controls(repository: OperationalRepository, system_id: UUID) -> list[ControlView]:
     repository.get_system(system_id)
     rows = repository.session.scalars(
         select(ControlRow)
@@ -521,9 +509,7 @@ def create_analysis_manifest(
         "risk_ids": [
             str(value)
             for value in repository.session.scalars(
-                select(RiskRow.id)
-                .where(RiskRow.system_id == system_id)
-                .order_by(RiskRow.id)
+                select(RiskRow.id).where(RiskRow.system_id == system_id).order_by(RiskRow.id)
             )
         ],
         "control_assessment_ids": [
@@ -589,9 +575,7 @@ def list_analysis_manifests(
     return [AnalysisManifestView.model_validate(row) for row in rows]
 
 
-def governance_overview(
-    repository: OperationalRepository, system_id: UUID
-) -> GovernanceOverview:
+def governance_overview(repository: OperationalRepository, system_id: UUID) -> GovernanceOverview:
     repository.get_system(system_id)
     published = latest_context(repository, system_id, status="published")
     draft = latest_context(repository, system_id, status="draft")
@@ -655,12 +639,7 @@ def governance_overview(
     control_points = 1 if controls == 0 else min(1, assessed_controls / controls)
     coverage = round(
         100
-        * (
-            0.25 * context_points
-            + 0.30 * risk_points
-            + 0.20 * owner_points
-            + 0.25 * control_points
-        )
+        * (0.25 * context_points + 0.30 * risk_points + 0.20 * owner_points + 0.25 * control_points)
     )
     manifest = repository.session.scalar(
         select(AnalysisManifestRow)

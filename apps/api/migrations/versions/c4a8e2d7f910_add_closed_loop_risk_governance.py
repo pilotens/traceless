@@ -54,13 +54,9 @@ def upgrade() -> None:
             "status IN ('draft', 'published', 'superseded')",
             name="ck_system_context_status",
         ),
-        sa.ForeignKeyConstraint(
-            ["system_id"], ["systems_operational.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["system_id"], ["systems_operational.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "system_id", "version", name="uq_system_context_system_version"
-        ),
+        sa.UniqueConstraint("system_id", "version", name="uq_system_context_system_version"),
     )
     op.create_index(
         "ix_system_context_system_created",
@@ -93,9 +89,7 @@ def upgrade() -> None:
             "'attack_chain', 'manual')",
             name="ck_risk_evidence_type",
         ),
-        sa.ForeignKeyConstraint(
-            ["risk_id"], ["risks_operational.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["risk_id"], ["risks_operational.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "risk_id",
@@ -104,9 +98,7 @@ def upgrade() -> None:
             name="uq_risk_evidence_identity",
         ),
     )
-    op.create_index(
-        "ix_risk_evidence_risk", "risk_evidence_links", ["risk_id"], unique=False
-    )
+    op.create_index("ix_risk_evidence_risk", "risk_evidence_links", ["risk_id"], unique=False)
 
     op.create_table(
         "risk_treatments",
@@ -151,12 +143,8 @@ def upgrade() -> None:
             "priority IN ('low', 'medium', 'high', 'critical')",
             name="ck_risk_treatment_priority",
         ),
-        sa.ForeignKeyConstraint(
-            ["risk_id"], ["risks_operational.id"], ondelete="CASCADE"
-        ),
-        sa.ForeignKeyConstraint(
-            ["system_id"], ["systems_operational.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["risk_id"], ["risks_operational.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["system_id"], ["systems_operational.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -165,12 +153,8 @@ def upgrade() -> None:
         ["system_id", "status"],
         unique=False,
     )
-    op.create_index(
-        "ix_risk_treatments_risk", "risk_treatments", ["risk_id"], unique=False
-    )
-    op.create_index(
-        "ix_risk_treatments_due", "risk_treatments", ["due_at"], unique=False
-    )
+    op.create_index("ix_risk_treatments_risk", "risk_treatments", ["risk_id"], unique=False)
+    op.create_index("ix_risk_treatments_due", "risk_treatments", ["due_at"], unique=False)
 
     op.create_table(
         "controls_operational",
@@ -189,13 +173,9 @@ def upgrade() -> None:
             "status IN ('planned', 'implemented', 'retired')",
             name="ck_control_status",
         ),
-        sa.ForeignKeyConstraint(
-            ["system_id"], ["systems_operational.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["system_id"], ["systems_operational.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "system_id", "control_key", name="uq_control_system_key"
-        ),
+        sa.UniqueConstraint("system_id", "control_key", name="uq_control_system_key"),
     )
     op.create_index(
         "ix_controls_system_status",
@@ -227,9 +207,7 @@ def upgrade() -> None:
             "result IN ('effective', 'partial', 'ineffective', 'not_tested')",
             name="ck_control_assessment_result",
         ),
-        sa.ForeignKeyConstraint(
-            ["control_id"], ["controls_operational.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["control_id"], ["controls_operational.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -257,17 +235,13 @@ def upgrade() -> None:
             ["architecture_snapshots.id"],
             ondelete="SET NULL",
         ),
-        sa.ForeignKeyConstraint(
-            ["scan_job_id"], ["scan_jobs.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["scan_job_id"], ["scan_jobs.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(
             ["system_context_version_id"],
             ["system_context_versions.id"],
             ondelete="SET NULL",
         ),
-        sa.ForeignKeyConstraint(
-            ["system_id"], ["systems_operational.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["system_id"], ["systems_operational.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "system_id",
@@ -323,13 +297,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "ix_analysis_manifests_system_created", table_name="analysis_manifests"
-    )
+    op.drop_index("ix_analysis_manifests_system_created", table_name="analysis_manifests")
     op.drop_table("analysis_manifests")
-    op.drop_index(
-        "ix_control_assessments_control_assessed", table_name="control_assessments"
-    )
+    op.drop_index("ix_control_assessments_control_assessed", table_name="control_assessments")
     op.drop_table("control_assessments")
     op.drop_index("ix_controls_system_status", table_name="controls_operational")
     op.drop_table("controls_operational")
@@ -339,10 +309,6 @@ def downgrade() -> None:
     op.drop_table("risk_treatments")
     op.drop_index("ix_risk_evidence_risk", table_name="risk_evidence_links")
     op.drop_table("risk_evidence_links")
-    op.drop_index(
-        "ux_system_context_one_published", table_name="system_context_versions"
-    )
-    op.drop_index(
-        "ix_system_context_system_created", table_name="system_context_versions"
-    )
+    op.drop_index("ux_system_context_one_published", table_name="system_context_versions")
+    op.drop_index("ix_system_context_system_created", table_name="system_context_versions")
     op.drop_table("system_context_versions")
