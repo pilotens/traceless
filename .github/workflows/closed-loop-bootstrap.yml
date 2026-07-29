@@ -40,20 +40,49 @@ jobs:
         run: |
           python -m pip install uv==0.11.28
           uv sync --locked --extra dev
+      - name: Add contextual reassessment control
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/web/src/components/RiskGovernanceWorkspace.tsx')
+          text = path.read_text()
+          marker = """                    {context.status === 'draft' && (
+                      <button disabled={busy} onClick={() => void run(async () => {
+                        await api.publishContext(selectedSystemId, context.id);
+                        setNotice(`Verksamhetskontext v${context.version} publicerades.`);
+                      })}>Publicera</button>
+                    )}
+"""
+          replacement = marker + """                    {context.status === 'published' && (
+                      <button disabled={busy} onClick={() => void run(async () => {
+                        const result = await api.reassessRisks(selectedSystemId);
+                        setNotice(`${result.risks_updated} risker ombedömdes med verksamhetskontext v${result.context_version}.`);
+                      })}>Ombedöm risker</button>
+                    )}
+"""
+          if marker not in text:
+              raise SystemExit('Published-context UI marker not found')
+          path.write_text(text.replace(marker, replacement, 1))
+          PY
       - name: Format and lint backend
         working-directory: apps/api
         run: |
           .venv/bin/ruff format \
             src/traceless_api/db/governance_models.py \
             src/traceless_api/models/governance.py \
+            src/traceless_api/models/contextual_risk.py \
             src/traceless_api/services/risk_governance.py \
+            src/traceless_api/services/contextual_risk.py \
             src/traceless_api/api/routes/governance.py \
             tests/test_risk_governance.py \
             migrations/versions/c4a8e2d7f910_add_closed_loop_risk_governance.py
           .venv/bin/ruff check --fix \
             src/traceless_api/db/governance_models.py \
             src/traceless_api/models/governance.py \
+            src/traceless_api/models/contextual_risk.py \
             src/traceless_api/services/risk_governance.py \
+            src/traceless_api/services/contextual_risk.py \
             src/traceless_api/api/routes/governance.py \
             tests/test_risk_governance.py \
             migrations/versions/c4a8e2d7f910_add_closed_loop_risk_governance.py
@@ -70,7 +99,7 @@ jobs:
           cd apps/api
           .venv/bin/pytest -q tests/test_risk_governance.py tests/test_operational_auth.py
           cd ../web
-          npm run test -- --run src/components/RiskGovernanceWorkspace.test.tsx src/App.test.tsx
+          npm run test -- --run src/components/RiskGovernanceWorkspace.test.tsx src/App.test.tsx src/components/CyberRiskGraph.test.tsx
           npm run build
       - name: Commit verified generated files
         run: |
@@ -80,5 +109,5 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m 'Verify closed-loop risk governance slice'
+          git commit -m 'Verify contextual closed-loop risk governance'
           git push origin HEAD:agent/closed-loop-risk-platform
