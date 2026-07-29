@@ -1,4 +1,3 @@
-
 import {
   Background,
   BackgroundVariant,
@@ -83,7 +82,7 @@ export function CyberRiskGraph({ graph }: CyberRiskGraphProps) {
     <div className="op-risk-graph-workspace">
       <section className="op-risk-graph-summary" aria-label="CISO-sammanfattning">
         {[
-          ['Säkerhetspoäng', `${graph.summary.security_score}/100`],
+          ['Operativ posture-indikator', `${graph.summary.security_score}/100`],
           ['Kritiska risker', graph.summary.critical_risks],
           ['Höga risker', graph.summary.high_risks],
           ['KEV-fynd', graph.summary.kev_findings],
@@ -93,12 +92,17 @@ export function CyberRiskGraph({ graph }: CyberRiskGraphProps) {
           <article key={label}><strong>{value}</strong><small>{label}</small></article>
         ))}
       </section>
+      <div className="op-collection-note" role="note">
+        Posture-indikatorn är en deterministisk prioriteringssignal baserad på aktuella öppna
+        risker, KEV-fynd och verifierad exponering. Den är inte ett certifierat säkerhetsbetyg
+        och ska alltid läsas tillsammans med täckning, aktualitet och osäkerhet.
+      </div>
 
       <section className="op-risk-graph-context panel">
         <div>
           <span className="section-kicker">VERKSAMHETSKONTEXT</span>
           <h2>{context.business_owner || 'Affärsägare saknas'}</h2>
-          <p>{context.capabilities.join(' · ') || 'Koppla verksamhetsförmågor i arkitekturvyn.'}</p>
+          <p>{context.capabilities.join(' · ') || 'Registrera och publicera verksamhetskontext i Riskstyrning.'}</p>
         </div>
         <dl>
           <div><dt>Processer</dt><dd>{context.processes.join(', ') || 'Saknas'}</dd></div>
@@ -112,6 +116,7 @@ export function CyberRiskGraph({ graph }: CyberRiskGraphProps) {
         <section className="op-risk-graph-actions panel">
           <span className="section-kicker">REKOMMENDERADE BESLUT</span>
           <ol>{graph.summary.recommended_actions.map((action) => <li key={action}>{action}</li>)}</ol>
+          <p className="op-caveat">Rekommendationer blir först styrda arbetsobjekt när en riskåtgärd skapas i Riskstyrning.</p>
         </section>
       )}
 
