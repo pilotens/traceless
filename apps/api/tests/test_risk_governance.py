@@ -92,6 +92,21 @@ def test_closed_loop_context_treatment_control_and_manifest(client: TestClient) 
     assert published.status_code == 200, published.text
     assert published.json()["status"] == "published"
 
+    reassessed = client.post(
+        f"/api/v1/operational/systems/{system_id}/risks/reassess"
+    )
+    assert reassessed.status_code == 200, reassessed.text
+    assert reassessed.json()["risks_updated"] == 1
+    assert reassessed.json()["selected_business_impact"] == 5
+    risk_detail = client.get(
+        f"/api/v1/operational/systems/{system_id}/risks/{risk_id}"
+    )
+    assert risk_detail.status_code == 200, risk_detail.text
+    assert risk_detail.json()["rationale"]["business_context"]["context_version"] == 1
+    assert "regulatory" in risk_detail.json()["rationale"]["business_context"][
+        "selected_impact_dimensions"
+    ]
+
     evidence = client.post(
         f"/api/v1/operational/systems/{system_id}/risks/{risk_id}/evidence",
         json={
