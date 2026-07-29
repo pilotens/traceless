@@ -9,15 +9,18 @@ import {
 } from './auth';
 import { DemoWorkspace } from './components/DemoWorkspace';
 import { Icon } from './components/Icon';
-import { I18nProvider, useI18n } from './i18n';
 import { OperationalWorkspace } from './components/OperationalWorkspace';
+import { RiskGovernanceWorkspace } from './components/RiskGovernanceWorkspace';
+import { I18nProvider, useI18n } from './i18n';
 
 interface AppProps {
   oidcConfiguration?: OidcConfiguration;
   oidcDependencies?: OidcAuthDependencies;
 }
 
-type ProductView = 'operational' | 'demo';
+type ProductView = 'operational' | 'governance' | 'demo';
+const DEMO_ENABLED =
+  import.meta.env.MODE === 'test' || import.meta.env.VITE_ENABLE_DEMO === 'true';
 
 function AuthenticationGate() {
   const auth = useOidcAuth();
@@ -63,6 +66,27 @@ export function AppShell() {
     return <AuthenticationGate />;
   }
 
+  const topTitle =
+    view === 'demo'
+      ? locale === 'sv'
+        ? 'End-to-end-demo'
+        : 'End-to-end demo'
+      : view === 'governance'
+        ? locale === 'sv'
+          ? 'Riskstyrning'
+          : 'Risk governance'
+        : t('topTitle');
+  const topHint =
+    view === 'demo'
+      ? locale === 'sv'
+        ? 'Beständig data genom den riktiga API-kedjan'
+        : 'Persisted data through the real API chain'
+      : view === 'governance'
+        ? locale === 'sv'
+          ? 'Ägare, SLA, kontroller, behandling och residualrisk'
+          : 'Owners, SLA, controls, treatment and residual risk'
+        : t('topHint');
+
   return (
     <div className="app-shell app-shell--operational">
       <aside className={`sidebar ${sidebarOpen ? 'sidebar--open' : ''}`}>
@@ -101,17 +125,31 @@ export function AppShell() {
             <span>{t('operationalAnalysis')}</span>
           </button>
           <button
-            className={`sidebar-nav__item ${view === 'demo' ? 'is-active' : ''}`}
-            aria-current={view === 'demo' ? 'page' : undefined}
+            className={`sidebar-nav__item ${view === 'governance' ? 'is-active' : ''}`}
+            aria-current={view === 'governance' ? 'page' : undefined}
             onClick={() => {
-              setView('demo');
+              setView('governance');
               setSidebarOpen(false);
             }}
             type="button"
           >
-            <Icon name="database" />
-            <span>{locale === 'sv' ? 'Demo' : 'Demo'}</span>
+            <Icon name="risk" />
+            <span>{locale === 'sv' ? 'Riskstyrning' : 'Risk governance'}</span>
           </button>
+          {DEMO_ENABLED && (
+            <button
+              className={`sidebar-nav__item ${view === 'demo' ? 'is-active' : ''}`}
+              aria-current={view === 'demo' ? 'page' : undefined}
+              onClick={() => {
+                setView('demo');
+                setSidebarOpen(false);
+              }}
+              type="button"
+            >
+              <Icon name="database" />
+              <span>Demo</span>
+            </button>
+          )}
         </nav>
 
         <div className="sidebar__footer">
@@ -145,8 +183,8 @@ export function AppShell() {
             <Icon name="menu" />
           </button>
           <div className="topbar__context">
-            <strong>{view === 'demo' ? (locale === 'sv' ? 'End-to-end-demo' : 'End-to-end demo') : t('topTitle')}</strong>
-            <small>{view === 'demo' ? (locale === 'sv' ? 'Beständig data genom den riktiga API-kedjan' : 'Persisted data through the real API chain') : t('topHint')}</small>
+            <strong>{topTitle}</strong>
+            <small>{topHint}</small>
           </div>
           <div className="topbar__actions">
             <span className="live-badge"><span /> {t('productView')}</span>
@@ -167,8 +205,12 @@ export function AppShell() {
 
         {view === 'operational' ? (
           <OperationalWorkspace api={api} />
-        ) : (
+        ) : view === 'governance' ? (
+          <RiskGovernanceWorkspace accessToken={auth.accessToken} />
+        ) : DEMO_ENABLED ? (
           <DemoWorkspace api={api} accessToken={auth.accessToken} locale={locale} />
+        ) : (
+          <OperationalWorkspace api={api} />
         )}
       </main>
     </div>

@@ -9,6 +9,7 @@ from traceless_api.api.routes import (
     attack_chains,
     authentication,
     collections,
+    governance,
     intelligence,
     jobs,
     operational,
@@ -29,6 +30,7 @@ operational_dependencies = [Depends(require_operational_principal)]
 router.include_router(asset_sources.router, dependencies=operational_dependencies)
 router.include_router(operational.router, dependencies=operational_dependencies)
 router.include_router(collections.router, dependencies=operational_dependencies)
+router.include_router(governance.router, dependencies=operational_dependencies)
 router.include_router(reports.router, dependencies=operational_dependencies)
 router.include_router(intelligence.router, dependencies=operational_dependencies)
 router.include_router(attack_chains.router, dependencies=operational_dependencies)

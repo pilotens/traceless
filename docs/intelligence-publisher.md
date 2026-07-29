@@ -33,7 +33,9 @@ export TRACELESS_PUBLISHER_AUTO_CREATE_SCHEMA=false
 python -m alembic -c publisher_alembic.ini upgrade head
 ```
 
-The current schema head is `p3d9b5c1e430`. SQLite remains development/test-only.
+The current committed publisher schema head is `p4e1c6a2f540`. SQLite remains
+development/test-only. CI validates upgrade, drift check, downgrade to base and upgrade
+back to head.
 
 ## Workflow
 
@@ -62,13 +64,6 @@ A reset is reconciled by stable provider/external identity. Existing local recor
 preserved, absent identities become tombstones and their findings/risks are retired. The
 customer's inventory and architecture are never deleted.
 
-## Operations
-
-Production still requires managed TLS and secrets, shared edge rate limiting, encrypted
-offsite backups with PITR, restore drills, monitoring/SLOs and an independent penetration
-test.
-
-
 ## Publisher schema v4
 
 The v4 publisher schema separates accounts from installations. One customer account can
@@ -78,7 +73,7 @@ installations are created through `/admin/v2/accounts` and
 `/admin/v2/accounts/{account_key}/installations`; the legacy client table is retained
 only as a compatibility path for existing deployments.
 
-Revision history now records the source kind and record type on every revision, plus
+Revision history records the source kind and record type on every revision, plus
 separate source, normalized, AI-analysis and complete-payload digests. A corrected
 classification is staged as a new immutable revision and only becomes current after a
 reviewer publishes it.
@@ -103,8 +98,15 @@ and run it against a production-shaped dataset.
 
 ## Separate publisher administration UI
 
-`apps/publisher-web` provides an internal administration surface on the publisher side of the
-trust boundary. It supports customer accounts, multiple installations, one-time credentials,
-review decisions, import-run status and signing-key inspection. The UI is separate from the
-customer-local Traceless web application and uses independent admin and reviewer identities when
-OIDC is not configured.
+`apps/publisher-web` provides an internal administration surface on the publisher side of
+the trust boundary. It supports customer accounts, multiple installations, one-time
+credentials, review decisions, import-run status and signing-key inspection. The UI is
+separate from the customer-local Traceless web application and uses independent admin and
+reviewer identities when OIDC is not configured.
+
+## Remaining production obligations
+
+Production still requires managed TLS and secrets, shared edge rate limiting, encrypted
+offsite backups with PITR, restore drills, monitoring/SLOs and an independent penetration
+test. Air-gapped delivery should use a separately specified signed offline bundle rather
+than weakening the online feed verification rules.

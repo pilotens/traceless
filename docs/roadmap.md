@@ -35,44 +35,71 @@ workers are included.
 Next: CVE List V5, range/applicability matching, CycloneDX/SBOM, OSV, additional
 direct adapters and analyst matching queues.
 
-## Milestone 3 — threat and risk analysis (`in progress`)
+## Milestone 3 — threat and contextual risk analysis (`in progress`)
 
-Delivered: a versioned preliminary risk policy that keeps severity and exploitation
-signals distinct, records its rationale and can consume analyst-verified exposure,
-reachability and control effectiveness from a versioned architecture. Verification
-identity and time are server-derived. The UI labels the result as a decision-support
-signal rather than a complete risk assessment.
+Delivered: a versioned risk policy that keeps severity and exploitation signals distinct,
+records its rationale and consumes analyst-verified exposure, reachability and control
+effectiveness. First-class published business-context versions now add business owner,
+capabilities, processes, data categories, regulations, RTO/RPO and a multidimensional
+impact profile. Current risks can be explicitly reassessed against an exact published
+context version and retain that version in their rationale.
 
-Next: STRIDE, ATT&CK/CAPEC/CWE rules, attack paths, uncertainty calibration,
-residual-risk treatment and policy administration.
+The posture value remains a deterministic operational indicator, not an externally
+calibrated security score.
 
-## Milestone 4 — closed loop (`in progress`)
+Next: formal risk-assessment approval, STRIDE, ATT&CK/CAPEC/CWE rules, system-bound
+attack paths, uncertainty calibration and policy administration.
 
-Delivered: durable finding/risk close/reopen behavior, distinct frozen management,
-technical and risk-register reports, and tenant-scoped background jobs for normalized
-or Nessus imports and report rendering. Jobs have idempotency, leases, heartbeat,
-retry and cancellation.
+## Milestone 4 — closed-loop governance (`in progress`)
 
-Next: complete analysis manifests, treatment approvals, asynchronous high-volume
-correlation, lineage UI, object storage and short-lived downloads.
+Delivered: supplementary many-source risk evidence, persistent treatments with strategy,
+owner, priority, SLA/deadline, approval, external work-item references, verification
+criteria and residual-risk fields. Treatments cannot close without residual risk and
+verification criteria. Named controls have immutable point-in-time design/operating
+effectiveness assessments. System and portfolio views identify unowned and overdue work.
 
-## Milestone 5 — modules (`in progress`)
+Analysis manifests freeze scan, architecture, published context, risk policy, risks and
+control-assessment identities behind a governance decision.
+
+Next: richer treatment state-transition policy, formal risk-owner acceptance, comments
+and attachments, generic work-item synchronization, Jira as the first production adapter,
+period comparisons and treatment effectiveness trends.
+
+## Milestone 5 — reporting and decision support (`in progress`)
+
+Delivered: distinct frozen management, technical and risk-register reports, selectable
+sections, SHA-256 integrity, TLP handling and tenant-scoped durable rendering jobs.
+
+Next: include treatment status, residual risk, governance coverage, decisions required,
+period-over-period change and analysis-manifest references in management reports. Add
+object storage and short-lived download URLs for high-volume deployments.
+
+## Milestone 6 — modules (`in progress`)
 
 Delivered: versioned manifest, compatibility/capability/permission validation and
 out-of-process transport contracts.
 
-Next: signed packages, admin approval, isolated runner and one production-deployed
-connector.
+Next: stop expanding the framework until one production connector uses it. Then add
+signed packages, admin approval and an isolated runner only where justified.
 
-## Milestone 6 — production hardening (`in progress`)
+## Milestone 7 — production hardening (`in progress`)
 
 Delivered: forced tenant RLS for the API role, separate owner migration and runtime
 roles, static unprivileged web serving, restrictive CSP/security headers, structured
 redacted request logs and Compose image/health/OIDC smoke coverage.
 
-Next: optional split dispatcher/executor roles, restore/accessibility/load/air-gap tests,
-monitoring and SLO evidence, restricted egress, managed secrets, Kubernetes/Helm where
-justified and signed production artifacts.
+Next: browser E2E, accessibility and visual-regression gates; parser fuzzing; restore,
+load and air-gap tests; monitoring/SLO evidence; restricted egress; managed secrets;
+signed production artifacts and an independent penetration test.
+
+## Deferred until prerequisites exist
+
+- Autonomous remediation is deferred until approved treatments, scoped credentials,
+  change windows, rollback plans and independent safety controls exist.
+- Production attack-path claims are deferred until approved architecture, explicit
+  asset/component bindings and control evidence can ground every edge.
+- Multiple parallel ticketing and SIEM adapters are deferred until the generic work-item
+  and event contracts have been proven by one production integration.
 
 No milestone is complete until normal, failure and partial states have automated
 coverage and the documented verification commands pass in CI.

@@ -113,6 +113,113 @@
         "title": "AiAnalysis",
         "type": "object"
       },
+      "AnalysisManifestCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {
+            "default": "risk_governance",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "title": "AnalysisManifestCreate",
+        "type": "object"
+      },
+      "AnalysisManifestView": {
+        "additionalProperties": false,
+        "properties": {
+          "architecture_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Architecture Snapshot Id"
+          },
+          "components": {
+            "additionalProperties": true,
+            "title": "Components",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "risk_policy_version": {
+            "title": "Risk Policy Version",
+            "type": "string"
+          },
+          "scan_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scan Job Id"
+          },
+          "source_fingerprint": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Source Fingerprint",
+            "type": "string"
+          },
+          "system_context_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Context Version Id"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "system_id",
+          "purpose",
+          "architecture_snapshot_id",
+          "system_context_version_id",
+          "scan_job_id",
+          "risk_policy_version",
+          "source_fingerprint",
+          "components",
+          "created_by",
+          "created_at"
+        ],
+        "title": "AnalysisManifestView",
+        "type": "object"
+      },
       "ApiRootResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1359,6 +1466,62 @@
         "title": "BackgroundJobView",
         "type": "object"
       },
+      "BusinessImpactProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Availability",
+            "type": "integer"
+          },
+          "confidentiality": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Confidentiality",
+            "type": "integer"
+          },
+          "financial": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Financial",
+            "type": "integer"
+          },
+          "integrity": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Integrity",
+            "type": "integer"
+          },
+          "regulatory": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Regulatory",
+            "type": "integer"
+          },
+          "reputation": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Reputation",
+            "type": "integer"
+          },
+          "safety": {
+            "default": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Safety",
+            "type": "integer"
+          }
+        },
+        "title": "BusinessImpactProfile",
+        "type": "object"
+      },
       "CanonicalIntelFeed": {
         "additionalProperties": false,
         "properties": {
@@ -1720,6 +1883,341 @@
           "external_assets"
         ],
         "title": "CisoRiskSummary",
+        "type": "object"
+      },
+      "ContextualRiskReassessmentView": {
+        "additionalProperties": false,
+        "properties": {
+          "context_version": {
+            "minimum": 1.0,
+            "title": "Context Version",
+            "type": "integer"
+          },
+          "context_version_id": {
+            "format": "uuid",
+            "title": "Context Version Id",
+            "type": "string"
+          },
+          "risks_considered": {
+            "minimum": 0.0,
+            "title": "Risks Considered",
+            "type": "integer"
+          },
+          "risks_updated": {
+            "minimum": 0.0,
+            "title": "Risks Updated",
+            "type": "integer"
+          },
+          "selected_business_impact": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Selected Business Impact",
+            "type": "integer"
+          },
+          "selected_impact_dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selected Impact Dimensions",
+            "type": "array"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "threat_risks": {
+            "minimum": 0.0,
+            "title": "Threat Risks",
+            "type": "integer"
+          },
+          "vulnerability_risks": {
+            "minimum": 0.0,
+            "title": "Vulnerability Risks",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "system_id",
+          "context_version_id",
+          "context_version",
+          "risks_considered",
+          "risks_updated",
+          "vulnerability_risks",
+          "threat_risks",
+          "selected_business_impact",
+          "selected_impact_dimensions"
+        ],
+        "title": "ContextualRiskReassessmentView",
+        "type": "object"
+      },
+      "ControlAssessmentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "design_effectiveness": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Design Effectiveness",
+            "type": "number"
+          },
+          "evidence_reference": {
+            "maxLength": 10000,
+            "minLength": 2,
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "operating_effectiveness": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Operating Effectiveness",
+            "type": "number"
+          },
+          "result": {
+            "enum": [
+              "effective",
+              "partial",
+              "ineffective",
+              "not_tested"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "design_effectiveness",
+          "operating_effectiveness",
+          "result",
+          "evidence_reference"
+        ],
+        "title": "ControlAssessmentCreate",
+        "type": "object"
+      },
+      "ControlAssessmentView": {
+        "additionalProperties": false,
+        "properties": {
+          "assessed_at": {
+            "format": "date-time",
+            "title": "Assessed At",
+            "type": "string"
+          },
+          "assessed_by": {
+            "title": "Assessed By",
+            "type": "string"
+          },
+          "control_id": {
+            "format": "uuid",
+            "title": "Control Id",
+            "type": "string"
+          },
+          "design_effectiveness": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Design Effectiveness",
+            "type": "number"
+          },
+          "evidence_reference": {
+            "maxLength": 10000,
+            "minLength": 2,
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operating_effectiveness": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Operating Effectiveness",
+            "type": "number"
+          },
+          "result": {
+            "enum": [
+              "effective",
+              "partial",
+              "ineffective",
+              "not_tested"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "design_effectiveness",
+          "operating_effectiveness",
+          "result",
+          "evidence_reference",
+          "id",
+          "control_id",
+          "assessed_by",
+          "assessed_at"
+        ],
+        "title": "ControlAssessmentView",
+        "type": "object"
+      },
+      "ControlCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "control_key": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Control Key",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Description",
+            "type": "string"
+          },
+          "framework": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Framework",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Owner",
+            "type": "string"
+          },
+          "status": {
+            "default": "planned",
+            "enum": [
+              "planned",
+              "implemented",
+              "retired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "control_key",
+          "name",
+          "owner"
+        ],
+        "title": "ControlCreate",
+        "type": "object"
+      },
+      "ControlView": {
+        "additionalProperties": false,
+        "properties": {
+          "control_key": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Control Key",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Description",
+            "type": "string"
+          },
+          "framework": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Framework",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Owner",
+            "type": "string"
+          },
+          "status": {
+            "default": "planned",
+            "enum": [
+              "planned",
+              "implemented",
+              "retired"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "control_key",
+          "name",
+          "owner",
+          "id",
+          "system_id",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ControlView",
         "type": "object"
       },
       "CurrentPrincipalResponse": {
@@ -3641,6 +4139,97 @@
         "title": "GlobalIntelRecordView",
         "type": "object"
       },
+      "GovernanceOverview": {
+        "additionalProperties": false,
+        "properties": {
+          "controls": {
+            "minimum": 0.0,
+            "title": "Controls",
+            "type": "integer"
+          },
+          "controls_with_current_assessment": {
+            "minimum": 0.0,
+            "title": "Controls With Current Assessment",
+            "type": "integer"
+          },
+          "coverage_percent": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Coverage Percent",
+            "type": "integer"
+          },
+          "draft_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemContextView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisManifestView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "open_risks": {
+            "minimum": 0.0,
+            "title": "Open Risks",
+            "type": "integer"
+          },
+          "overdue_treatments": {
+            "minimum": 0.0,
+            "title": "Overdue Treatments",
+            "type": "integer"
+          },
+          "published_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemContextView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "risks_with_active_treatment": {
+            "minimum": 0.0,
+            "title": "Risks With Active Treatment",
+            "type": "integer"
+          },
+          "risks_without_owner": {
+            "minimum": 0.0,
+            "title": "Risks Without Owner",
+            "type": "integer"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "system_id",
+          "published_context",
+          "draft_context",
+          "open_risks",
+          "risks_with_active_treatment",
+          "risks_without_owner",
+          "overdue_treatments",
+          "controls",
+          "controls_with_current_assessment",
+          "coverage_percent",
+          "latest_manifest"
+        ],
+        "title": "GovernanceOverview",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -4439,6 +5028,107 @@
         "title": "PipelineOverview",
         "type": "object"
       },
+      "PortfolioGovernanceItem": {
+        "additionalProperties": false,
+        "properties": {
+          "business_owner": {
+            "title": "Business Owner",
+            "type": "string"
+          },
+          "coverage_percent": {
+            "title": "Coverage Percent",
+            "type": "integer"
+          },
+          "criticality": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "open_risks": {
+            "title": "Open Risks",
+            "type": "integer"
+          },
+          "overdue_treatments": {
+            "title": "Overdue Treatments",
+            "type": "integer"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "risks_without_owner": {
+            "title": "Risks Without Owner",
+            "type": "integer"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "system_name": {
+            "title": "System Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "system_id",
+          "system_name",
+          "project_id",
+          "criticality",
+          "business_owner",
+          "open_risks",
+          "overdue_treatments",
+          "risks_without_owner",
+          "coverage_percent"
+        ],
+        "title": "PortfolioGovernanceItem",
+        "type": "object"
+      },
+      "PortfolioGovernanceView": {
+        "additionalProperties": false,
+        "properties": {
+          "average_coverage_percent": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Average Coverage Percent",
+            "type": "integer"
+          },
+          "open_risks": {
+            "title": "Open Risks",
+            "type": "integer"
+          },
+          "overdue_treatments": {
+            "title": "Overdue Treatments",
+            "type": "integer"
+          },
+          "risks_without_owner": {
+            "title": "Risks Without Owner",
+            "type": "integer"
+          },
+          "systems": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioGovernanceItem"
+            },
+            "title": "Systems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "systems",
+          "open_risks",
+          "overdue_treatments",
+          "risks_without_owner",
+          "average_coverage_percent"
+        ],
+        "title": "PortfolioGovernanceView",
+        "type": "object"
+      },
       "ProjectCreate": {
         "additionalProperties": false,
         "properties": {
@@ -4669,6 +5359,135 @@
         "title": "ReportView",
         "type": "object"
       },
+      "RiskEvidenceLinkCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_id": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "evidence_type": {
+            "enum": [
+              "finding",
+              "threat",
+              "architecture",
+              "control",
+              "attack_chain",
+              "manual"
+            ],
+            "title": "Evidence Type",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Label",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          }
+        },
+        "required": [
+          "evidence_type",
+          "evidence_id",
+          "label"
+        ],
+        "title": "RiskEvidenceLinkCreate",
+        "type": "object"
+      },
+      "RiskEvidenceLinkView": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "evidence_id": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "evidence_type": {
+            "enum": [
+              "finding",
+              "threat",
+              "architecture",
+              "control",
+              "attack_chain",
+              "manual"
+            ],
+            "title": "Evidence Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Label",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "risk_id": {
+            "format": "uuid",
+            "title": "Risk Id",
+            "type": "string"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          }
+        },
+        "required": [
+          "evidence_type",
+          "evidence_id",
+          "label",
+          "id",
+          "risk_id",
+          "created_by",
+          "created_at"
+        ],
+        "title": "RiskEvidenceLinkView",
+        "type": "object"
+      },
       "RiskGraphEdge": {
         "additionalProperties": false,
         "properties": {
@@ -4893,6 +5712,571 @@
           "evidence_status"
         ],
         "title": "RiskSummaryView",
+        "type": "object"
+      },
+      "RiskTreatmentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "approver": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Description",
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "external_key": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Key"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "owner": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Owner",
+            "type": "string"
+          },
+          "priority": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Priority",
+            "type": "string"
+          },
+          "sla_days": {
+            "anyOf": [
+              {
+                "maximum": 3650.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Days"
+          },
+          "strategy": {
+            "default": "mitigate",
+            "enum": [
+              "mitigate",
+              "avoid",
+              "transfer",
+              "accept"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Title",
+            "type": "string"
+          },
+          "verification_criteria": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Verification Criteria",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "owner",
+          "priority"
+        ],
+        "title": "RiskTreatmentCreate",
+        "type": "object"
+      },
+      "RiskTreatmentUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "approver": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "external_key": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Key"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "residual_impact": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Impact"
+          },
+          "residual_likelihood": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Likelihood"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "proposed",
+                  "approved",
+                  "in_progress",
+                  "verification",
+                  "closed",
+                  "cancelled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "verification_criteria": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Criteria"
+          }
+        },
+        "title": "RiskTreatmentUpdate",
+        "type": "object"
+      },
+      "RiskTreatmentView": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "decision_note": {
+            "title": "Decision Note",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "external_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Key"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "priority": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Priority",
+            "type": "string"
+          },
+          "residual_impact": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Impact"
+          },
+          "residual_level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Level"
+          },
+          "residual_likelihood": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Likelihood"
+          },
+          "residual_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Score"
+          },
+          "risk_id": {
+            "format": "uuid",
+            "title": "Risk Id",
+            "type": "string"
+          },
+          "sla_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Days"
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "approved",
+              "in_progress",
+              "verification",
+              "closed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "strategy": {
+            "enum": [
+              "mitigate",
+              "avoid",
+              "transfer",
+              "accept"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "verification_criteria": {
+            "title": "Verification Criteria",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "verified_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified By"
+          }
+        },
+        "required": [
+          "id",
+          "system_id",
+          "risk_id",
+          "strategy",
+          "title",
+          "description",
+          "owner",
+          "approver",
+          "status",
+          "priority",
+          "due_at",
+          "sla_days",
+          "verification_criteria",
+          "decision_note",
+          "external_system",
+          "external_key",
+          "external_url",
+          "residual_likelihood",
+          "residual_impact",
+          "residual_score",
+          "residual_level",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "approved_by",
+          "approved_at",
+          "verified_by",
+          "verified_at",
+          "overdue"
+        ],
+        "title": "RiskTreatmentView",
         "type": "object"
       },
       "RiskView": {
@@ -5444,6 +6828,219 @@
           "confidence"
         ],
         "title": "ServiceView",
+        "type": "object"
+      },
+      "SystemContextCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "business_owner": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Business Owner",
+            "type": "string"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "data_categories": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Data Categories",
+            "type": "array"
+          },
+          "impact_profile": {
+            "$ref": "#/components/schemas/BusinessImpactProfile"
+          },
+          "processes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Processes",
+            "type": "array"
+          },
+          "recovery_point_objective_hours": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Point Objective Hours"
+          },
+          "recovery_time_objective_hours": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Time Objective Hours"
+          },
+          "regulations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Regulations",
+            "type": "array"
+          }
+        },
+        "title": "SystemContextCreate",
+        "type": "object"
+      },
+      "SystemContextView": {
+        "additionalProperties": false,
+        "properties": {
+          "business_owner": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Business Owner",
+            "type": "string"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "data_categories": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Data Categories",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "impact_profile": {
+            "$ref": "#/components/schemas/BusinessImpactProfile"
+          },
+          "processes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Processes",
+            "type": "array"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published By"
+          },
+          "recovery_point_objective_hours": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Point Objective Hours"
+          },
+          "recovery_time_objective_hours": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Time Objective Hours"
+          },
+          "regulations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Regulations",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published",
+              "superseded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "system_id": {
+            "format": "uuid",
+            "title": "System Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "system_id",
+          "version",
+          "status",
+          "created_by",
+          "created_at",
+          "published_by",
+          "published_at"
+        ],
+        "title": "SystemContextView",
         "type": "object"
       },
       "ThreatSummaryView": {
@@ -7849,6 +9446,62 @@
         ]
       }
     },
+    "/api/v1/operational/portfolio/governance": {
+      "get": {
+        "operationId": "portfolio_api_v1_operational_portfolio_governance_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioGovernanceView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Portfolio",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
     "/api/v1/operational/projects": {
       "get": {
         "operationId": "list_projects_api_v1_operational_projects_get",
@@ -8310,6 +9963,150 @@
         "summary": "Cancel Scan",
         "tags": [
           "operational"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/analysis-manifests": {
+      "get": {
+        "operationId": "manifests_api_v1_operational_systems__system_id__analysis_manifests_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisManifestView"
+                  },
+                  "title": "Response Manifests Api V1 Operational Systems  System Id  Analysis Manifests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Manifests",
+        "tags": [
+          "risk-governance"
+        ]
+      },
+      "post": {
+        "operationId": "create_manifest_api_v1_operational_systems__system_id__analysis_manifests_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisManifestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisManifestView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Manifest",
+        "tags": [
+          "risk-governance"
         ]
       }
     },
@@ -8890,6 +10687,534 @@
         ]
       }
     },
+    "/api/v1/operational/systems/{system_id}/context/versions": {
+      "get": {
+        "operationId": "context_versions_api_v1_operational_systems__system_id__context_versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SystemContextView"
+                  },
+                  "title": "Response Context Versions Api V1 Operational Systems  System Id  Context Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Context Versions",
+        "tags": [
+          "risk-governance"
+        ]
+      },
+      "post": {
+        "operationId": "create_context_version_api_v1_operational_systems__system_id__context_versions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemContextCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemContextView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Context Version",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/context/versions/{context_id}/publish": {
+      "post": {
+        "operationId": "publish_context_version_api_v1_operational_systems__system_id__context_versions__context_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "context_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Context Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemContextView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publish Context Version",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/controls": {
+      "get": {
+        "operationId": "controls_api_v1_operational_systems__system_id__controls_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ControlView"
+                  },
+                  "title": "Response Controls Api V1 Operational Systems  System Id  Controls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Controls",
+        "tags": [
+          "risk-governance"
+        ]
+      },
+      "post": {
+        "operationId": "create_system_control_api_v1_operational_systems__system_id__controls_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create System Control",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/controls/{control_id}/assessments": {
+      "get": {
+        "operationId": "control_assessments_api_v1_operational_systems__system_id__controls__control_id__assessments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "control_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Control Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ControlAssessmentView"
+                  },
+                  "title": "Response Control Assessments Api V1 Operational Systems  System Id  Controls  Control Id  Assessments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Control Assessments",
+        "tags": [
+          "risk-governance"
+        ]
+      },
+      "post": {
+        "operationId": "create_control_assessment_api_v1_operational_systems__system_id__controls__control_id__assessments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "control_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Control Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlAssessmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlAssessmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Control Assessment",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
     "/api/v1/operational/systems/{system_id}/findings": {
       "get": {
         "operationId": "findings_page_api_v1_operational_systems__system_id__findings_get",
@@ -9279,6 +11604,72 @@
         "summary": "Update Finding Lifecycle",
         "tags": [
           "operational"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/governance/overview": {
+      "get": {
+        "operationId": "overview_api_v1_operational_systems__system_id__governance_overview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GovernanceOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Overview",
+        "tags": [
+          "risk-governance"
         ]
       }
     },
@@ -10030,6 +12421,72 @@
         ]
       }
     },
+    "/api/v1/operational/systems/{system_id}/risks/reassess": {
+      "post": {
+        "operationId": "reassess_risks_api_v1_operational_systems__system_id__risks_reassess_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextualRiskReassessmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reassess Risks",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
     "/api/v1/operational/systems/{system_id}/risks/{risk_id}": {
       "get": {
         "operationId": "risk_detail_api_v1_operational_systems__system_id__risks__risk_id__get",
@@ -10103,6 +12560,256 @@
         "summary": "Risk Detail",
         "tags": [
           "operational-collections"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/risks/{risk_id}/evidence": {
+      "get": {
+        "operationId": "risk_evidence_api_v1_operational_systems__system_id__risks__risk_id__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "risk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Risk Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskEvidenceLinkView"
+                  },
+                  "title": "Response Risk Evidence Api V1 Operational Systems  System Id  Risks  Risk Id  Evidence Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Risk Evidence",
+        "tags": [
+          "risk-governance"
+        ]
+      },
+      "post": {
+        "operationId": "create_risk_evidence_api_v1_operational_systems__system_id__risks__risk_id__evidence_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "risk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Risk Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskEvidenceLinkCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskEvidenceLinkView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Risk Evidence",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/risks/{risk_id}/treatments": {
+      "post": {
+        "operationId": "create_risk_treatment_api_v1_operational_systems__system_id__risks__risk_id__treatments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "risk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Risk Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskTreatmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskTreatmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Risk Treatment",
+        "tags": [
+          "risk-governance"
         ]
       }
     },
@@ -10735,6 +13442,179 @@
         "summary": "Threat Detail",
         "tags": [
           "operational-collections"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/treatments": {
+      "get": {
+        "operationId": "treatments_api_v1_operational_systems__system_id__treatments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "risk_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Risk Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskTreatmentView"
+                  },
+                  "title": "Response Treatments Api V1 Operational Systems  System Id  Treatments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Treatments",
+        "tags": [
+          "risk-governance"
+        ]
+      }
+    },
+    "/api/v1/operational/systems/{system_id}/treatments/{treatment_id}": {
+      "patch": {
+        "operationId": "patch_treatment_api_v1_operational_systems__system_id__treatments__treatment_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "treatment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Treatment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskTreatmentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskTreatmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch Treatment",
+        "tags": [
+          "risk-governance"
         ]
       }
     },

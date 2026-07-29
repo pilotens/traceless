@@ -61,6 +61,55 @@ export interface AiAnalysis {
   taxonomy_version: string;
 }
 
+/** AnalysisManifestCreate */
+export interface AnalysisManifestCreate {
+  /**
+   * Purpose
+   * @minLength 2
+   * @maxLength 80
+   * @default "risk_governance"
+   */
+  purpose?: string;
+}
+
+/** AnalysisManifestView */
+export interface AnalysisManifestView {
+  /** Architecture Snapshot Id */
+  architecture_snapshot_id: string | null;
+  /** Components */
+  components: Record<string, any>;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+  /** Created By */
+  created_by: string;
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  /** Purpose */
+  purpose: string;
+  /** Risk Policy Version */
+  risk_policy_version: string;
+  /** Scan Job Id */
+  scan_job_id: string | null;
+  /**
+   * Source Fingerprint
+   * @pattern ^[a-f0-9]{64}$
+   */
+  source_fingerprint: string;
+  /** System Context Version Id */
+  system_context_version_id: string | null;
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+}
+
 /** ApiRootResponse */
 export interface ApiRootResponse {
   /**
@@ -715,6 +764,59 @@ export interface BackgroundJobView {
   system_id: string;
 }
 
+/** BusinessImpactProfile */
+export interface BusinessImpactProfile {
+  /**
+   * Availability
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  availability?: number;
+  /**
+   * Confidentiality
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  confidentiality?: number;
+  /**
+   * Financial
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  financial?: number;
+  /**
+   * Integrity
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  integrity?: number;
+  /**
+   * Regulatory
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  regulatory?: number;
+  /**
+   * Reputation
+   * @min 1
+   * @max 5
+   * @default 3
+   */
+  reputation?: number;
+  /**
+   * Safety
+   * @min 1
+   * @max 5
+   * @default 1
+   */
+  safety?: number;
+}
+
 /** CanonicalIntelFeed */
 export interface CanonicalIntelFeed {
   /**
@@ -908,6 +1010,224 @@ export interface CisoRiskSummary {
    * @max 100
    */
   security_score: number;
+}
+
+/** ContextualRiskReassessmentView */
+export interface ContextualRiskReassessmentView {
+  /**
+   * Context Version
+   * @min 1
+   */
+  context_version: number;
+  /**
+   * Context Version Id
+   * @format uuid
+   */
+  context_version_id: string;
+  /**
+   * Risks Considered
+   * @min 0
+   */
+  risks_considered: number;
+  /**
+   * Risks Updated
+   * @min 0
+   */
+  risks_updated: number;
+  /**
+   * Selected Business Impact
+   * @min 1
+   * @max 5
+   */
+  selected_business_impact: number;
+  /** Selected Impact Dimensions */
+  selected_impact_dimensions: string[];
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /**
+   * Threat Risks
+   * @min 0
+   */
+  threat_risks: number;
+  /**
+   * Vulnerability Risks
+   * @min 0
+   */
+  vulnerability_risks: number;
+  /** Warnings */
+  warnings?: string[];
+}
+
+/** ControlAssessmentCreate */
+export interface ControlAssessmentCreate {
+  /**
+   * Design Effectiveness
+   * @min 0
+   * @max 1
+   */
+  design_effectiveness: number;
+  /**
+   * Evidence Reference
+   * @minLength 2
+   * @maxLength 10000
+   */
+  evidence_reference: string;
+  /**
+   * Operating Effectiveness
+   * @min 0
+   * @max 1
+   */
+  operating_effectiveness: number;
+  /** Result */
+  result: "effective" | "partial" | "ineffective" | "not_tested";
+  /** Valid Until */
+  valid_until?: string | null;
+}
+
+/** ControlAssessmentView */
+export interface ControlAssessmentView {
+  /**
+   * Assessed At
+   * @format date-time
+   */
+  assessed_at: string;
+  /** Assessed By */
+  assessed_by: string;
+  /**
+   * Control Id
+   * @format uuid
+   */
+  control_id: string;
+  /**
+   * Design Effectiveness
+   * @min 0
+   * @max 1
+   */
+  design_effectiveness: number;
+  /**
+   * Evidence Reference
+   * @minLength 2
+   * @maxLength 10000
+   */
+  evidence_reference: string;
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Operating Effectiveness
+   * @min 0
+   * @max 1
+   */
+  operating_effectiveness: number;
+  /** Result */
+  result: "effective" | "partial" | "ineffective" | "not_tested";
+  /** Valid Until */
+  valid_until?: string | null;
+}
+
+/** ControlCreate */
+export interface ControlCreate {
+  /**
+   * Control Key
+   * @minLength 2
+   * @maxLength 160
+   */
+  control_key: string;
+  /**
+   * Description
+   * @maxLength 20000
+   * @default ""
+   */
+  description?: string;
+  /**
+   * Framework
+   * @maxLength 160
+   * @default ""
+   */
+  framework?: string;
+  /**
+   * Name
+   * @minLength 2
+   * @maxLength 300
+   */
+  name: string;
+  /**
+   * Owner
+   * @minLength 2
+   * @maxLength 160
+   */
+  owner: string;
+  /**
+   * Status
+   * @default "planned"
+   */
+  status?: "planned" | "implemented" | "retired";
+}
+
+/** ControlView */
+export interface ControlView {
+  /**
+   * Control Key
+   * @minLength 2
+   * @maxLength 160
+   */
+  control_key: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+  /** Created By */
+  created_by: string;
+  /**
+   * Description
+   * @maxLength 20000
+   * @default ""
+   */
+  description?: string;
+  /**
+   * Framework
+   * @maxLength 160
+   * @default ""
+   */
+  framework?: string;
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name
+   * @minLength 2
+   * @maxLength 300
+   */
+  name: string;
+  /**
+   * Owner
+   * @minLength 2
+   * @maxLength 160
+   */
+  owner: string;
+  /**
+   * Status
+   * @default "planned"
+   */
+  status?: "planned" | "implemented" | "retired";
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /**
+   * Updated At
+   * @format date-time
+   */
+  updated_at: string;
 }
 
 /** CurrentPrincipalResponse */
@@ -1734,6 +2054,54 @@ export interface GlobalIntelRecordView {
   vulnerability: Record<string, any> | null;
 }
 
+/** GovernanceOverview */
+export interface GovernanceOverview {
+  /**
+   * Controls
+   * @min 0
+   */
+  controls: number;
+  /**
+   * Controls With Current Assessment
+   * @min 0
+   */
+  controls_with_current_assessment: number;
+  /**
+   * Coverage Percent
+   * @min 0
+   * @max 100
+   */
+  coverage_percent: number;
+  draft_context: SystemContextView | null;
+  latest_manifest: AnalysisManifestView | null;
+  /**
+   * Open Risks
+   * @min 0
+   */
+  open_risks: number;
+  /**
+   * Overdue Treatments
+   * @min 0
+   */
+  overdue_treatments: number;
+  published_context: SystemContextView | null;
+  /**
+   * Risks With Active Treatment
+   * @min 0
+   */
+  risks_with_active_treatment: number;
+  /**
+   * Risks Without Owner
+   * @min 0
+   */
+  risks_without_owner: number;
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
@@ -2190,6 +2558,52 @@ export interface PipelineOverview {
   threats: ThreatView[];
 }
 
+/** PortfolioGovernanceItem */
+export interface PortfolioGovernanceItem {
+  /** Business Owner */
+  business_owner: string;
+  /** Coverage Percent */
+  coverage_percent: number;
+  /** Criticality */
+  criticality: "low" | "medium" | "high" | "critical";
+  /** Open Risks */
+  open_risks: number;
+  /** Overdue Treatments */
+  overdue_treatments: number;
+  /**
+   * Project Id
+   * @format uuid
+   */
+  project_id: string;
+  /** Risks Without Owner */
+  risks_without_owner: number;
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /** System Name */
+  system_name: string;
+}
+
+/** PortfolioGovernanceView */
+export interface PortfolioGovernanceView {
+  /**
+   * Average Coverage Percent
+   * @min 0
+   * @max 100
+   */
+  average_coverage_percent: number;
+  /** Open Risks */
+  open_risks: number;
+  /** Overdue Treatments */
+  overdue_treatments: number;
+  /** Risks Without Owner */
+  risks_without_owner: number;
+  /** Systems */
+  systems: PortfolioGovernanceItem[];
+}
+
 /** ProjectCreate */
 export interface ProjectCreate {
   /**
@@ -2308,6 +2722,79 @@ export interface ReportView {
   withdrawal_reason?: string | null;
 }
 
+/** RiskEvidenceLinkCreate */
+export interface RiskEvidenceLinkCreate {
+  /**
+   * Evidence Id
+   * @minLength 1
+   * @maxLength 240
+   */
+  evidence_id: string;
+  /** Evidence Type */
+  evidence_type:
+    | "finding"
+    | "threat"
+    | "architecture"
+    | "control"
+    | "attack_chain"
+    | "manual";
+  /**
+   * Label
+   * @minLength 2
+   * @maxLength 500
+   */
+  label: string;
+  /** Metadata */
+  metadata?: Record<string, any>;
+  /** Source Version */
+  source_version?: string | null;
+}
+
+/** RiskEvidenceLinkView */
+export interface RiskEvidenceLinkView {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+  /** Created By */
+  created_by: string;
+  /**
+   * Evidence Id
+   * @minLength 1
+   * @maxLength 240
+   */
+  evidence_id: string;
+  /** Evidence Type */
+  evidence_type:
+    | "finding"
+    | "threat"
+    | "architecture"
+    | "control"
+    | "attack_chain"
+    | "manual";
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Label
+   * @minLength 2
+   * @maxLength 500
+   */
+  label: string;
+  /** Metadata */
+  metadata?: Record<string, any>;
+  /**
+   * Risk Id
+   * @format uuid
+   */
+  risk_id: string;
+  /** Source Version */
+  source_version?: string | null;
+}
+
 /** RiskGraphEdge */
 export interface RiskGraphEdge {
   /**
@@ -2419,6 +2906,169 @@ export interface RiskSummaryView {
   threat_id: string | null;
   /** Title */
   title: string;
+}
+
+/** RiskTreatmentCreate */
+export interface RiskTreatmentCreate {
+  /** Approver */
+  approver?: string | null;
+  /**
+   * Description
+   * @maxLength 20000
+   * @default ""
+   */
+  description?: string;
+  /** Due At */
+  due_at?: string | null;
+  /** External Key */
+  external_key?: string | null;
+  /** External System */
+  external_system?: string | null;
+  /** External Url */
+  external_url?: string | null;
+  /**
+   * Owner
+   * @minLength 2
+   * @maxLength 160
+   */
+  owner: string;
+  /** Priority */
+  priority: "low" | "medium" | "high" | "critical";
+  /** Sla Days */
+  sla_days?: number | null;
+  /**
+   * Strategy
+   * @default "mitigate"
+   */
+  strategy?: "mitigate" | "avoid" | "transfer" | "accept";
+  /**
+   * Title
+   * @minLength 2
+   * @maxLength 300
+   */
+  title: string;
+  /**
+   * Verification Criteria
+   * @maxLength 10000
+   * @default ""
+   */
+  verification_criteria?: string;
+}
+
+/** RiskTreatmentUpdate */
+export interface RiskTreatmentUpdate {
+  /** Approver */
+  approver?: string | null;
+  /** Decision Note */
+  decision_note?: string | null;
+  /** Due At */
+  due_at?: string | null;
+  /** External Key */
+  external_key?: string | null;
+  /** External System */
+  external_system?: string | null;
+  /** External Url */
+  external_url?: string | null;
+  /** Owner */
+  owner?: string | null;
+  /** Residual Impact */
+  residual_impact?: number | null;
+  /** Residual Likelihood */
+  residual_likelihood?: number | null;
+  /** Status */
+  status?:
+    | "proposed"
+    | "approved"
+    | "in_progress"
+    | "verification"
+    | "closed"
+    | "cancelled"
+    | null;
+  /** Verification Criteria */
+  verification_criteria?: string | null;
+}
+
+/** RiskTreatmentView */
+export interface RiskTreatmentView {
+  /** Approved At */
+  approved_at: string | null;
+  /** Approved By */
+  approved_by: string | null;
+  /** Approver */
+  approver: string | null;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+  /** Created By */
+  created_by: string;
+  /** Decision Note */
+  decision_note: string;
+  /** Description */
+  description: string;
+  /** Due At */
+  due_at: string | null;
+  /** External Key */
+  external_key: string | null;
+  /** External System */
+  external_system: string | null;
+  /** External Url */
+  external_url: string | null;
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  /** Overdue */
+  overdue: boolean;
+  /** Owner */
+  owner: string;
+  /** Priority */
+  priority: "low" | "medium" | "high" | "critical";
+  /** Residual Impact */
+  residual_impact: number | null;
+  /** Residual Level */
+  residual_level: "low" | "medium" | "high" | "critical" | null;
+  /** Residual Likelihood */
+  residual_likelihood: number | null;
+  /** Residual Score */
+  residual_score: number | null;
+  /**
+   * Risk Id
+   * @format uuid
+   */
+  risk_id: string;
+  /** Sla Days */
+  sla_days: number | null;
+  /** Status */
+  status:
+    | "proposed"
+    | "approved"
+    | "in_progress"
+    | "verification"
+    | "closed"
+    | "cancelled";
+  /** Strategy */
+  strategy: "mitigate" | "avoid" | "transfer" | "accept";
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /** Title */
+  title: string;
+  /**
+   * Updated At
+   * @format date-time
+   */
+  updated_at: string;
+  /** Verification Criteria */
+  verification_criteria: string;
+  /** Verified At */
+  verified_at: string | null;
+  /** Verified By */
+  verified_by: string | null;
 }
 
 /** RiskView */
@@ -2654,6 +3304,101 @@ export interface ServiceView {
   state: string;
   /** Version */
   version: string | null;
+}
+
+/** SystemContextCreate */
+export interface SystemContextCreate {
+  /**
+   * Business Owner
+   * @maxLength 160
+   * @default ""
+   */
+  business_owner?: string;
+  /**
+   * Capabilities
+   * @maxItems 50
+   */
+  capabilities?: string[];
+  /**
+   * Data Categories
+   * @maxItems 50
+   */
+  data_categories?: string[];
+  impact_profile?: BusinessImpactProfile;
+  /**
+   * Processes
+   * @maxItems 50
+   */
+  processes?: string[];
+  /** Recovery Point Objective Hours */
+  recovery_point_objective_hours?: number | null;
+  /** Recovery Time Objective Hours */
+  recovery_time_objective_hours?: number | null;
+  /**
+   * Regulations
+   * @maxItems 50
+   */
+  regulations?: string[];
+}
+
+/** SystemContextView */
+export interface SystemContextView {
+  /**
+   * Business Owner
+   * @maxLength 160
+   * @default ""
+   */
+  business_owner?: string;
+  /**
+   * Capabilities
+   * @maxItems 50
+   */
+  capabilities?: string[];
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+  /** Created By */
+  created_by: string;
+  /**
+   * Data Categories
+   * @maxItems 50
+   */
+  data_categories?: string[];
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  impact_profile?: BusinessImpactProfile;
+  /**
+   * Processes
+   * @maxItems 50
+   */
+  processes?: string[];
+  /** Published At */
+  published_at: string | null;
+  /** Published By */
+  published_by: string | null;
+  /** Recovery Point Objective Hours */
+  recovery_point_objective_hours?: number | null;
+  /** Recovery Time Objective Hours */
+  recovery_time_objective_hours?: number | null;
+  /**
+   * Regulations
+   * @maxItems 50
+   */
+  regulations?: string[];
+  /** Status */
+  status: "draft" | "published" | "superseded";
+  /**
+   * System Id
+   * @format uuid
+   */
+  system_id: string;
+  /** Version */
+  version: number;
 }
 
 /** ThreatSummaryView */
