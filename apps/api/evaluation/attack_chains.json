@@ -1,0 +1,18 @@
+[
+  {"id":"en-phishing-chain","language":"en","text":"A phishing email delivered invoice.docm. The victim opened invoice.docm. The document exploited CVE-2026-10001 using T1203.","expected_behaviors":["delivery","user_action","exploitation"],"expected_attack_ids":["T1203"],"expected_reachable":true},
+  {"id":"en-execution-c2","language":"en","text":"The internet-facing host downloaded payload.exe over HTTPS. It executed payload.exe and connected to its command and control server.","expected_behaviors":["download","execute","communication"],"expected_attack_ids":[],"expected_reachable":false},
+  {"id":"en-credentials-lateral","language":"en","text":"The actor dumped credentials and used PsExec for lateral movement to another host.","expected_behaviors":["credential_access","lateral_movement"],"expected_attack_ids":[]},
+  {"id":"en-collection-exfiltration","language":"en","text":"The malware collected screenshots, archived the data, and uploaded the archive for exfiltration.","expected_behaviors":["collection","exfiltration"],"expected_attack_ids":[]},
+  {"id":"en-impact","language":"en","text":"The ransomware encrypted files and disrupted the production service.","expected_behaviors":["impact"],"expected_attack_ids":[]},
+  {"id":"en-negated","language":"en","text":"The gateway blocked the attachment and the victim did not open it. No payload was executed.","expected_behaviors":[],"expected_attack_ids":[]},
+  {"id":"sv-phishing-chain","language":"sv","text":"Ett nätfiskemejl levererade faktura.docm. Användaren öppnade faktura.docm. Dokumentet utnyttjade CVE-2026-20001 med T1203.","expected_behaviors":["delivery","user_action","exploitation"],"expected_attack_ids":["T1203"],"expected_reachable":true},
+  {"id":"sv-execution-c2","language":"sv","text":"Den internetexponerade servern laddade ner payload.exe via HTTPS. Den körde payload.exe och anslöt till en kommando och kontroll-server.","expected_behaviors":["download","execute","communication"],"expected_attack_ids":[],"expected_reachable":false},
+  {"id":"sv-credentials-lateral","language":"sv","text":"Angriparen dumpade autentiseringsuppgifter och använde PsExec för lateral förflyttning till en annan värd.","expected_behaviors":["credential_access","lateral_movement"],"expected_attack_ids":[]},
+  {"id":"sv-collection-exfiltration","language":"sv","text":"Skadlig kod samlade in skärmdumpar, arkiverade materialet och laddade upp arkivet för exfiltration.","expected_behaviors":["collection","exfiltration"],"expected_attack_ids":[]},
+  {"id":"sv-impact","language":"sv","text":"Utpressningsprogrammet krypterade filer och störde produktionstjänsten.","expected_behaviors":["impact"],"expected_attack_ids":[]},
+  {"id":"sv-negated","language":"sv","text":"Gatewayen blockerade bilagan och användaren öppnade inte filen. Ingen payload kördes.","expected_behaviors":[],"expected_attack_ids":[]},
+  {"id":"en-persistence-evasion","language":"en","text":"The malware created a service for persistence and disabled antivirus to evade defenses.","expected_behaviors":["persistence","defense_evasion"],"expected_attack_ids":[]},
+  {"id":"sv-persistence-evasion","language":"sv","text":"Skadlig kod skapade en tjänst för beständighet och inaktiverade antivirus för försvarsundvikande.","expected_behaviors":["persistence","defense_evasion"],"expected_attack_ids":[]},
+  {"id":"en-discovery","language":"en","text":"The implant enumerated system information and performed network discovery.","expected_behaviors":["discovery"],"expected_attack_ids":[]},
+  {"id":"sv-discovery","language":"sv","text":"Implantatet kartlade systeminformation och genomförde nätverksinventering.","expected_behaviors":["discovery"],"expected_attack_ids":[]}
+]
