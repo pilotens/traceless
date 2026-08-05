@@ -1,186 +1,113 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { createOperationalApi } from './api';
+import { LiveWorkspace } from './components/LiveWorkspace';
+import { MockupWorkspace, type WorkspaceTab } from './components/MockupWorkspace';
 import {
   OidcAuthProvider,
+  readOidcConfiguration,
   useOidcAuth,
   type OidcAuthDependencies,
   type OidcConfiguration,
 } from './auth';
-import { DemoWorkspace } from './components/DemoWorkspace';
-import { Icon } from './components/Icon';
-import { I18nProvider, useI18n } from './i18n';
-import { OperationalWorkspace } from './components/OperationalWorkspace';
 
 interface AppProps {
   oidcConfiguration?: OidcConfiguration;
   oidcDependencies?: OidcAuthDependencies;
+  fetchImpl?: typeof fetch;
 }
 
-type ProductView = 'operational' | 'demo';
+const pathByTab: Record<WorkspaceTab, string> = {
+  overview: 'overview',
+  assets: 'assets',
+  threats: 'threats',
+  findings: 'vulnerabilities',
+  risks: 'risks',
+  architecture: 'architecture',
+  reports: 'reports',
+};
 
-function AuthenticationGate() {
+const tabByPath: Record<string, WorkspaceTab> = {
+  overview: 'overview',
+  analysis: 'overview',
+  assets: 'assets',
+  threats: 'threats',
+  intelligence: 'threats',
+  findings: 'findings',
+  vulnerabilities: 'findings',
+  risks: 'risks',
+  'risk-graph': 'risks',
+  architecture: 'architecture',
+  reports: 'reports',
+};
+
+function readTab(): WorkspaceTab {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  return tabByPath[parts.at(-1) ?? ''] ?? 'overview';
+}
+
+function isDemoRoute(): boolean {
+  return window.location.pathname === '/demo' || window.location.pathname.startsWith('/demo/');
+}
+
+function SignInView() {
   const auth = useOidcAuth();
-  const { t } = useI18n();
-  const busy = auth.status === 'checking' || auth.status === 'redirecting';
   return (
-    <main className="auth-page">
-      <section className="auth-card" aria-live="polite">
-        <div className="brand__mark auth-card__mark" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
-        <p className="eyebrow">Traceless Security Graph</p>
-        <h1>{busy ? t('checking') : t('signIn')}</h1>
-        <p>
-          {auth.errorMessage ??
-            (busy
-              ? t('oidcConnecting')
-              : t('oidcPrompt'))}
-        </p>
-        {!busy && auth.canSignIn && (
-          <button className="primary-button auth-card__button" onClick={() => void auth.signIn()} type="button">
-            {t('signIn')}
-          </button>
-        )}
+    <main className="tm-auth">
+      <section>
+        <div className="tm-logo-mark" aria-hidden="true"><i /></div>
+        <span className="tm-wordmark">traceless</span>
+        <h1>Logga in till Traceless</h1>
+        <p>Fortsätt till den operativa säkerhetsanalysen.</p>
+        {auth.errorMessage && <div className="tm-auth-error">{auth.errorMessage}</div>}
+        <button type="button" disabled={!auth.canSignIn} onClick={() => void auth.signIn()}>
+          Logga in
+        </button>
       </section>
     </main>
   );
 }
 
-export function AppShell() {
+function AppContent() {
   const auth = useOidcAuth();
-  const { locale, setLocale, t } = useI18n();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [view, setView] = useState<ProductView>('operational');
-  const api = useMemo(
-    () => createOperationalApi({ getAccessToken: () => auth.accessToken }),
-    [auth.accessToken],
-  );
+  const [tab, setTab] = useState<WorkspaceTab>(readTab);
+  const [demo, setDemo] = useState(isDemoRoute);
+  const api = useMemo(() => createOperationalApi({
+    getAccessToken: () => auth.status === 'authenticated' ? auth.accessToken : null,
+  }), [auth.accessToken, auth.status]);
+
+  useEffect(() => {
+    const handleHistory = () => {
+      setTab(readTab());
+      setDemo(isDemoRoute());
+    };
+    window.addEventListener('popstate', handleHistory);
+    return () => window.removeEventListener('popstate', handleHistory);
+  }, []);
 
   if (auth.status !== 'disabled' && auth.status !== 'authenticated') {
-    return <AuthenticationGate />;
+    return <SignInView />;
   }
 
-  return (
-    <div className="app-shell app-shell--operational">
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar--open' : ''}`}>
-        <div className="brand">
-          <div className="brand__mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div>
-            <strong>traceless</strong>
-            <small>SECURITY GRAPH</small>
-          </div>
-          <button
-            aria-label={t('closeMenu')}
-            className="icon-button sidebar__close"
-            onClick={() => setSidebarOpen(false)}
-            type="button"
-          >
-            <Icon name="close" />
-          </button>
-        </div>
+  function navigate(nextTab: WorkspaceTab) {
+    if (nextTab === tab) return;
+    const path = `${demo ? '/demo' : '/app'}/${pathByTab[nextTab]}`;
+    window.history.pushState({}, '', path);
+    setTab(nextTab);
+  }
 
-        <nav className="sidebar-nav" aria-label="Huvudmeny">
-          <p className="sidebar-nav__label">{t('product')}</p>
-          <button
-            className={`sidebar-nav__item ${view === 'operational' ? 'is-active' : ''}`}
-            aria-current={view === 'operational' ? 'page' : undefined}
-            onClick={() => {
-              setView('operational');
-              setSidebarOpen(false);
-            }}
-            type="button"
-          >
-            <Icon name="scan" />
-            <span>{t('operationalAnalysis')}</span>
-          </button>
-          <button
-            className={`sidebar-nav__item ${view === 'demo' ? 'is-active' : ''}`}
-            aria-current={view === 'demo' ? 'page' : undefined}
-            onClick={() => {
-              setView('demo');
-              setSidebarOpen(false);
-            }}
-            type="button"
-          >
-            <Icon name="database" />
-            <span>{locale === 'sv' ? 'Demo' : 'Demo'}</span>
-          </button>
-        </nav>
-
-        <div className="sidebar__footer">
-          <div className="collection-status">
-            <span className="pulse-dot pulse-dot--neutral" />
-            <span>
-              <strong>{t('workspace')}</strong>
-              <small>{t('workspaceHint')}</small>
-            </span>
-          </div>
-        </div>
-      </aside>
-
-      {sidebarOpen && (
-        <button
-          aria-label={t('closeMenu')}
-          className="sidebar-backdrop"
-          onClick={() => setSidebarOpen(false)}
-          type="button"
-        />
-      )}
-
-      <main className="main-area main-area--workspace">
-        <header className="topbar topbar--operational">
-          <button
-            aria-label={t('openMenu')}
-            className="icon-button topbar__menu"
-            onClick={() => setSidebarOpen(true)}
-            type="button"
-          >
-            <Icon name="menu" />
-          </button>
-          <div className="topbar__context">
-            <strong>{view === 'demo' ? (locale === 'sv' ? 'End-to-end-demo' : 'End-to-end demo') : t('topTitle')}</strong>
-            <small>{view === 'demo' ? (locale === 'sv' ? 'Beständig data genom den riktiga API-kedjan' : 'Persisted data through the real API chain') : t('topHint')}</small>
-          </div>
-          <div className="topbar__actions">
-            <span className="live-badge"><span /> {t('productView')}</span>
-            <label className="language-control">
-              <span>{t('language')}</span>
-              <select aria-label={t('language')} value={locale} onChange={(event) => setLocale(event.target.value as 'sv' | 'en')}>
-                <option value="sv">Svenska</option>
-                <option value="en">English</option>
-              </select>
-            </label>
-            {auth.status === 'authenticated' && (
-              <button className="secondary-button auth-signout" onClick={auth.signOut} type="button">
-                {t('signOut')}
-              </button>
-            )}
-          </div>
-        </header>
-
-        {view === 'operational' ? (
-          <OperationalWorkspace api={api} />
-        ) : (
-          <DemoWorkspace api={api} accessToken={auth.accessToken} locale={locale} />
-        )}
-      </main>
-    </div>
-  );
+  if (demo) return <MockupWorkspace initialTab={tab} onTabChange={navigate} />;
+  return <LiveWorkspace api={api} initialTab={tab} onTabChange={navigate} />;
 }
 
-export default function App({ oidcConfiguration, oidcDependencies }: AppProps) {
+export default function App({ oidcConfiguration, oidcDependencies, fetchImpl }: AppProps) {
+  const configuration = oidcConfiguration ?? readOidcConfiguration();
   return (
-    <I18nProvider>
-      <OidcAuthProvider configuration={oidcConfiguration} dependencies={oidcDependencies}>
-        <AppShell />
-      </OidcAuthProvider>
-    </I18nProvider>
+    <OidcAuthProvider
+      configuration={configuration}
+      dependencies={{ ...(oidcDependencies ?? {}), fetchImpl }}
+    >
+      <AppContent />
+    </OidcAuthProvider>
   );
 }
