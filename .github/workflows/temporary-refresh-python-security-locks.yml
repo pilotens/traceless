@@ -1,0 +1,78 @@
+name: Temporary refresh Python security locks
+
+on:
+  push:
+    branches:
+      - chore/codex-cloud-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-python-locks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: chore/codex-cloud-foundation
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Update the cryptography compatibility window
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("apps/api/pyproject.toml")
+          text = path.read_text()
+          old = '  "cryptography>=48.0.1,<49.0.0",'
+          new = '  "cryptography>=50.0.1,<51.0.0",'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f"Expected one cryptography constraint, found {count}")
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Resolve only the affected Python packages
+        working-directory: apps/api
+        run: |
+          python -m pip install uv==0.11.28
+          uv lock --upgrade-package cryptography --upgrade-package pip
+          uv sync --locked --extra dev
+      - name: Verify resolved versions
+        working-directory: apps/api
+        run: |
+          .venv/bin/python - <<'PY'
+          from importlib.metadata import version
+          from packaging.version import Version
+
+          cryptography_version = Version(version("cryptography"))
+          pip_version = Version(version("pip"))
+          assert Version("50.0.1") <= cryptography_version < Version("51.0.0")
+          assert pip_version >= Version("26.2")
+          print(f"cryptography={cryptography_version}")
+          print(f"pip={pip_version}")
+          PY
+      - name: Validate API and security audit
+        working-directory: apps/api
+        run: |
+          .venv/bin/ruff check .
+          .venv/bin/pytest --cov=traceless_api --cov-report=term-missing
+          uv export --locked --extra dev --no-emit-project \
+            --format requirements-txt \
+            --output-file /tmp/traceless-audit-requirements.txt
+          .venv/bin/pip-audit \
+            --requirement /tmp/traceless-audit-requirements.txt \
+            --require-hashes
+      - name: Commit audited locks and remove this temporary workflow
+        env:
+          TARGET_BRANCH: chore/codex-cloud-foundation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temporary-refresh-python-security-locks.yml
+          git add apps/api/pyproject.toml apps/api/uv.lock
+          git diff --cached --check
+          git commit -m "Refresh Python security dependencies"
+          git push origin "HEAD:${TARGET_BRANCH}"
