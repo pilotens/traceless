@@ -42,6 +42,7 @@
 
 - [ ] `cd apps/api && .venv/bin/ruff check .`
 - [ ] Relevant API tests
+- [ ] Time-sensitive fixtures remain stable as the calendar advances.
 - [ ] Full API test suite
 - [ ] `cd apps/web && npm run test`
 - [ ] `cd apps/web && npm run build`
