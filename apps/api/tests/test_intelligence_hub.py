@@ -786,3 +786,74 @@ def test_correlation_requires_a_completed_scan(client: TestClient) -> None:
     )
     assert response.status_code == 409
     assert "completed scan" in response.json()["detail"]
+
+
+def test_new_inventory_recorrelates_and_keeps_active_threat_risk_open(
+    client: TestClient,
+) -> None:
+    system_id = _system_with_scan(client)
+    imported_at = datetime.now(UTC) - timedelta(minutes=1)
+    feed = _feed(imported_at)
+    feed["items"] = [feed["items"][1]]  # type: ignore[index]
+    imported = client.post(
+        "/api/v1/operational/intelligence/records/import",
+        json=feed,
+    )
+    assert imported.status_code == 200, imported.text
+    record = client.get(
+        "/api/v1/operational/intelligence/records",
+        params={"review_status": "pending"},
+    ).json()["items"][0]
+    approved = client.patch(
+        f"/api/v1/operational/intelligence/records/{record['id']}/review",
+        json={"decision": "approved", "note": "Verified active threat source."},
+    )
+    assert approved.status_code == 200, approved.text
+    correlated = client.post(
+        f"/api/v1/operational/systems/{system_id}/intelligence/correlate"
+    )
+    assert correlated.status_code == 200, correlated.text
+    assert correlated.json()["threats_created"] == 1
+    assert correlated.json()["risks_created"] == 1
+    before = client.get(
+        f"/api/v1/operational/systems/{system_id}/overview"
+    ).json()
+    assert before["risks"][0]["status"] == "open"
+    prior_scan_id = before["threats"][0]["provenance"]["matched_scan_id"]
+
+    authorization = client.post(
+        f"/api/v1/operational/systems/{system_id}/scan-authorizations",
+        json={
+            "targets": ["100.64.0.10"],
+            "profile": "service_inventory",
+            "approved_by": "System owner",
+            "purpose": "Verify threat recorrelation on a new inventory generation",
+            "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+            "confirmation": (
+                "Jag bekräftar att jag har tillstånd att skanna angivna mål."
+            ),
+        },
+    )
+    assert authorization.status_code == 201, authorization.text
+    next_source_time = int(datetime.now(UTC).timestamp()) - 60
+    next_xml = NMAP_XML.replace(
+        f'time="{NMAP_SOURCE_TIME}"'.encode(),
+        f'time="{next_source_time}"'.encode(),
+    )
+    next_scan = client.post(
+        f"/api/v1/operational/systems/{system_id}/scans/import/nmap",
+        params={"authorization_id": authorization.json()["id"]},
+        content=next_xml,
+        headers={"Content-Type": "application/xml"},
+    )
+    assert next_scan.status_code == 201, next_scan.text
+    assert next_scan.json()["result_summary"]["is_current_inventory"] is True
+
+    after = client.get(
+        f"/api/v1/operational/systems/{system_id}/overview"
+    ).json()
+    assert len(after["threats"]) == 1
+    assert after["threats"][0]["matched_asset_ids"]
+    assert after["threats"][0]["provenance"]["matched_scan_id"] != prior_scan_id
+    assert after["risks"][0]["status"] == "open"
+    assert after["risks"][0]["evidence_status"] == "current"
