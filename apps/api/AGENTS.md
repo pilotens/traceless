@@ -32,6 +32,19 @@ methods as the enforcement point for tenant and resource scope.
   eligibility depends on authoritative time.
 - Keep external inputs bounded before expensive parsing, persistence, or correlation.
 
+## Dependency security
+
+- Do not suppress or broadly ignore a dependency advisory merely to make CI pass.
+- For a vulnerable direct dependency, review the upstream security/changelog notes,
+  move the manifest to the smallest supported fixed release line, and refresh the
+  lock with `uv` rather than hand-editing hashes.
+- For a vulnerable transitive or development dependency, update only the affected
+  lock resolution unless an explicit direct constraint is required.
+- A runtime dependency update requires the full API tests, hash-verified dependency
+  audit, and the production-shaped container build before merge.
+- Record removed APIs, changed platform requirements, or other upgrade risks in the
+  pull request even when the test suite remains green.
+
 ## Database and tenancy
 
 - Request sessions bind one immutable organization. Do not reuse or rebind a session
