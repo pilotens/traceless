@@ -1,0 +1,72 @@
+name: Codex environment
+
+on:
+  pull_request:
+    paths:
+      - ".codex/**"
+      - "AGENTS.md"
+      - "apps/**/AGENTS.md"
+      - "apps/api/pyproject.toml"
+      - "apps/api/uv.lock"
+      - "apps/web/package.json"
+      - "apps/web/package-lock.json"
+      - "apps/publisher-web/package.json"
+      - "apps/publisher-web/package-lock.json"
+      - ".github/workflows/codex-environment.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".codex/**"
+      - "AGENTS.md"
+      - "apps/**/AGENTS.md"
+      - "apps/api/pyproject.toml"
+      - "apps/api/uv.lock"
+      - "apps/web/package.json"
+      - "apps/web/package-lock.json"
+      - "apps/publisher-web/package.json"
+      - "apps/publisher-web/package-lock.json"
+      - ".github/workflows/codex-environment.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-environment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: codex-environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            apps/publisher-web/package-lock.json
+      - name: Validate setup scripts
+        run: |
+          bash -n .codex/setup.sh
+          bash -n .codex/maintenance.sh
+      - name: Reproduce Codex Cloud setup
+        env:
+          CI: "true"
+          UV_LINK_MODE: copy
+        run: bash .codex/setup.sh
+      - name: Verify pinned tools and installed workspaces
+        run: |
+          export PATH="$(python3 -c 'import site; print(site.USER_BASE + "/bin")'):$PATH"
+          test "$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "3.12"
+          test "$(node -p 'process.versions.node.split(".")[0]')" = "22"
+          test "$(uv --version | awk '{print $2}')" = "0.11.28"
+          test -x apps/api/.venv/bin/python
+          test -d apps/web/node_modules
+          test -d apps/publisher-web/node_modules
