@@ -6,8 +6,9 @@ the repository.
 
 ## One-time Codex environment
 
-Open Codex from ChatGPT and connect GitHub. During GitHub authorization, grant the
-Codex GitHub app access to **only** `pilotens/traceless` unless another repository is
+Open a supported Codex client—Codex web when it is exposed for the account, or the
+ChatGPT desktop app—and connect GitHub. During GitHub authorization, grant the Codex
+GitHub app access to **only** `pilotens/traceless` unless another repository is
 deliberately added later.
 
 Create an environment with these values:
@@ -84,16 +85,21 @@ Avoid prompts such as “improve everything”, “make it production-ready”, 
 10/10”. They produce oversized, weakly reviewable changes. Create one issue or task
 per coherent objective.
 
-## Mobile workflow
+## Cloud and mobile handoff
 
-1. Create a task in Codex from the ChatGPT iOS app or the Codex web interface.
+1. Start a new cloud task in Codex web when it is available for the account; otherwise
+   start it in Codex from the ChatGPT desktop app.
 2. Select the `Traceless` environment and `main` as the base.
-3. Let Codex implement and validate the task in its cloud container.
-4. Ask Codex to open a pull request.
-5. Review the PR summary, changed files, checks, and any migration or configuration
+3. Once delegated to Codex Cloud, the task runs in the managed cloud environment and
+   the local computer does not need to remain online.
+4. Use the ChatGPT mobile app's **Remote** surface for supported Codex chats to inspect
+   progress, answer questions, and steer the task. Availability can depend on the
+   account, client, and rollout.
+5. Ask Codex to open a pull request.
+6. Review the PR summary, changed files, checks, and any migration or configuration
    changes from GitHub mobile.
-6. Merge only after all required CI checks pass.
-7. Deployment must be triggered by the protected `main` branch, never directly by a
+7. Merge only after all required CI checks pass.
+8. Deployment must be triggered by the protected `main` branch, never directly by a
    Codex branch.
 
 The repository includes a **Codex task** issue template. Use it when a task benefits
