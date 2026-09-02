@@ -63,18 +63,19 @@ def _system_with_inventory(client: TestClient) -> str:
             "confirmation": "Jag bekräftar att jag har tillstånd att skanna angivna mål.",
         },
     ).json()
+    source_completed_at = int(datetime.now(UTC).timestamp()) - 300
     scanned = client.post(
         f"/api/v1/operational/systems/{system['id']}/scans/import/nmap",
         params={"authorization_id": authorization["id"]},
-        content=b"""<?xml version="1.0"?>
-        <nmaprun scanner="nmap" version="7.99" start="1784325590">
+        content=f"""<?xml version="1.0"?>
+        <nmaprun scanner="nmap" version="7.99" start="{source_completed_at - 10}">
           <host><status state="up"/><address addr="100.64.0.10" addrtype="ipv4"/>
             <hostnames><hostname name="gateway.example.invalid" type="PTR"/></hostnames>
             <ports><port protocol="tcp" portid="443"><state state="open"/>
               <service name="https" product="Example Gateway" version="1.0"/>
             </port></ports>
-          </host><runstats><finished time="1784325600" exit="success"/></runstats>
-        </nmaprun>""",
+          </host><runstats><finished time="{source_completed_at}" exit="success"/></runstats>
+        </nmaprun>""".encode(),
         headers={"Content-Type": "application/xml"},
     )
     assert scanned.status_code == 201, scanned.text

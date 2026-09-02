@@ -11,7 +11,7 @@ from traceless_api.db.models import (
     ScanJobRow,
 )
 
-BASE_SOURCE_TIME = 1_784_325_600
+BASE_SOURCE_TIME = int(datetime.now(UTC).timestamp()) - 300
 
 
 def _create_system(client: TestClient) -> str:
@@ -115,12 +115,13 @@ def _import_nmap(
 
 
 def _vendor_cve(client: TestClient, system_id: str) -> dict[str, object]:
+    observed_at = datetime.fromtimestamp(BASE_SOURCE_TIME + 60, UTC).isoformat()
     response = client.post(
         f"/api/v1/operational/systems/{system_id}/vulnerability-scans/import",
         json={
             "provider": "qualys",
             "source_name": "endpoint.json",
-            "scan_completed_at": "2026-07-18T12:00:00Z",
+            "scan_completed_at": observed_at,
             "observations": [
                 {
                     "provider_finding_id": "QID-443",
@@ -135,7 +136,7 @@ def _vendor_cve(client: TestClient, system_id: str) -> dict[str, object]:
                     "cve_ids": ["CVE-2099-44300"],
                     "cvss_score": 8.8,
                     "evidence": {"authenticated": True},
-                    "observed_at": "2026-07-18T12:00:00Z",
+                    "observed_at": observed_at,
                 }
             ],
         },
@@ -539,6 +540,12 @@ def test_nessus_presence_does_not_become_absence_when_correlation_temporarily_fa
         ),
     )
     endpoint = f"/api/v1/operational/systems/{system_id}/vulnerability-scans/import"
+    first_completed_at = datetime.fromtimestamp(
+        BASE_SOURCE_TIME + 60, UTC
+    ).isoformat()
+    second_completed_at = datetime.fromtimestamp(
+        BASE_SOURCE_TIME + 180, UTC
+    ).isoformat()
 
     def payload(
         completed_at: str,
@@ -573,7 +580,7 @@ def test_nessus_presence_does_not_become_absence_when_correlation_temporarily_fa
             ],
         }
 
-    opened = client.post(endpoint, json=payload("2026-07-18T10:00:00Z", "first.json"))
+    opened = client.post(endpoint, json=payload(first_completed_at, "first.json"))
     assert opened.status_code == 201, opened.text
     assert opened.json()["promoted_findings"] == 1
 
@@ -597,7 +604,7 @@ def test_nessus_presence_does_not_become_absence_when_correlation_temporarily_fa
 
     present = client.post(
         endpoint,
-        json=payload("2026-07-19T10:00:00Z", "second.json"),
+        json=payload(second_completed_at, "second.json"),
     )
     assert present.status_code == 201, present.text
     assert present.json()["promoted_findings"] == 0
