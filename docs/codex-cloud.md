@@ -114,7 +114,7 @@ for this repository. Repository-specific review rules are defined in the
 For a solo-maintained repository, a practical ruleset is:
 
 - require a pull request before changes reach `main`;
-- require the `api`, `web`, `publisher-web`, and `compose` CI jobs;
+- require the `api`, `web`, `publisher-web`, `compose`, and `codex-environment` jobs;
 - require branches to be current before merge;
 - block force pushes and branch deletion;
 - allow no bypass for automation;
