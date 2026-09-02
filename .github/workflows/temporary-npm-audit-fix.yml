@@ -1,0 +1,46 @@
+name: Temporary npm audit lock refresh
+
+on:
+  push:
+    branches:
+      - chore/codex-cloud-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh-locks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            apps/publisher-web/package-lock.json
+      - name: Refresh customer web lock
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm audit fix --package-lock-only
+          npm audit
+      - name: Refresh publisher web lock
+        working-directory: apps/publisher-web
+        run: |
+          npm ci
+          npm audit fix --package-lock-only
+          npm audit
+      - name: Create patch
+        run: git diff --binary -- apps/web/package-lock.json apps/publisher-web/package-lock.json > npm-audit-fix.patch
+      - name: Upload refreshed lock files
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-fix
+          path: |
+            npm-audit-fix.patch
+            apps/web/package-lock.json
+            apps/publisher-web/package-lock.json
+          retention-days: 1
