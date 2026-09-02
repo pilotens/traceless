@@ -38,16 +38,13 @@ PY
 )"
 path_line="export PATH=\"${user_bin}:\$PATH\""
 
-case ":${PATH}:" in
-  *":${user_bin}:"*) ;;
-  *)
-    export PATH="${user_bin}:${PATH}"
-    touch "$HOME/.bashrc"
-    if ! grep -Fqx "$path_line" "$HOME/.bashrc"; then
-      printf '\n%s\n' "$path_line" >> "$HOME/.bashrc"
-    fi
-    ;;
-esac
+# Always put the user installation first. A universal image may already contain a
+# different uv version later on PATH.
+export PATH="${user_bin}:${PATH}"
+touch "$HOME/.bashrc"
+if ! grep -Fqx "$path_line" "$HOME/.bashrc"; then
+  printf '\n%s\n' "$path_line" >> "$HOME/.bashrc"
+fi
 
 command -v uv >/dev/null 2>&1 || die "uv was installed but is not available on PATH"
 uv_version="$(uv --version | awk '{print $2}')"
