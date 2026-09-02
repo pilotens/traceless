@@ -11,7 +11,9 @@ from pydantic import SecretStr
 from traceless_api.db.models import ScanAuthorizationRow
 from traceless_api.worker import process_next_scan
 
-NMAP_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+NMAP_SOURCE_TIME = int(datetime.now(UTC).timestamp()) - 300
+
+NMAP_XML = f"""<?xml version="1.0" encoding="UTF-8"?>
 <nmaprun scanner="nmap" version="7.99">
   <host>
     <status state="up" reason="syn-ack"/>
@@ -28,15 +30,15 @@ NMAP_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
     </ports>
     <os><osmatch name="Linux 6.x" accuracy="96"/></os>
   </host>
-  <runstats><finished time="1784325600" exit="success"/></runstats>
+  <runstats><finished time="{NMAP_SOURCE_TIME}" exit="success"/></runstats>
 </nmaprun>
-"""
+""".encode()
 
-NMAP_EMPTY_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+NMAP_EMPTY_XML = f"""<?xml version="1.0" encoding="UTF-8"?>
 <nmaprun scanner="nmap" version="7.99">
-  <runstats><finished time="1784325660" exit="success"/></runstats>
+  <runstats><finished time="{NMAP_SOURCE_TIME + 60}" exit="success"/></runstats>
 </nmaprun>
-"""
+""".encode()
 
 NETBOX_CREDENTIAL = token_urlsafe(32)
 

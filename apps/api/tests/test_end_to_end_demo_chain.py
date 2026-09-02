@@ -20,7 +20,9 @@ PUBLISHER_ORIGIN = "https://publisher.example.test"
 PUBLISHER_ENDPOINT = f"{PUBLISHER_ORIGIN}/v2/datapoints"
 CREDENTIAL_REFERENCE = "demo-publisher"
 
-NMAP_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+NMAP_SOURCE_TIME = int(datetime.now(UTC).timestamp()) - 300
+
+NMAP_XML = f"""<?xml version="1.0" encoding="UTF-8"?>
 <nmaprun scanner="nmap" version="7.99">
   <host>
     <status state="up" reason="syn-ack"/>
@@ -37,9 +39,9 @@ NMAP_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
     </ports>
     <os><osmatch name="Linux 6.x" accuracy="96"/></os>
   </host>
-  <runstats><finished time="1784325600" exit="success"/></runstats>
+  <runstats><finished time="{NMAP_SOURCE_TIME}" exit="success"/></runstats>
 </nmaprun>
-"""
+""".encode()
 
 
 def _headers(key: str) -> dict[str, str]:

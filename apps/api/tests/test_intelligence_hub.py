@@ -7,7 +7,9 @@ from sqlalchemy import select
 from traceless_api.db.models import AuditEventRow, FindingEvidenceRow, GlobalIntelRecordRow
 from traceless_api.job_worker import process_next_background_job
 
-NMAP_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+NMAP_SOURCE_TIME = int(datetime.now(UTC).timestamp()) - 300
+
+NMAP_XML = f"""<?xml version="1.0" encoding="UTF-8"?>
 <nmaprun scanner="nmap" version="7.99">
   <host>
     <status state="up" reason="syn-ack"/>
@@ -22,9 +24,9 @@ NMAP_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
       </port>
     </ports>
   </host>
-  <runstats><finished time="1784325600" exit="success"/></runstats>
+  <runstats><finished time="{NMAP_SOURCE_TIME}" exit="success"/></runstats>
 </nmaprun>
-"""
+""".encode()
 
 
 def _system_with_scan(
